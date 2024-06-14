@@ -3,6 +3,22 @@ import pandas as pd
 
 
 def inicio():
+    st.divider()
+    dados_anterior = st.checkbox("Preenchimento automático.")
+    if dados_anterior:
+        uploaded_file = st.file_uploader("Submeter o arquivo 'DadosEntrada.xlsx' construído anteriormente:")
+        if uploaded_file is not None:
+            dataframe = pd.read_excel(uploaded_file)
+            st.write(dataframe)
+        else:
+            st.markdown("""❗ Obs.: Evite alterar o arquivo 'DadosEntrada.xlsx'
+             utilizando o Excel. Se os dados não preencherem automaticamente,
+             recomenda-se preencher de forma manual novamente.""")
+    else:
+        st.warning('''Se for a sua primeira vez no Qualitool 2.0,
+        você terá que preencher os dados de forma manual.''',
+        icon="❕")
+    st.divider()
     col_1, col_2 = st.columns(2)
 
     classe_rio = col_2.slider(
