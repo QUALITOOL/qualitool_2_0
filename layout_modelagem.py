@@ -205,10 +205,10 @@ def dados_iniciais(lista_modelagem, n_tributarios, labels, lista_tabs):
                                                             inverse=True)
                     st.map(df_plot, size = 1, color='#007FFF')
             else:       
-            
-                comprimento = list(np.arange(0, comp + discret, discret))
-                for k in range(len(comprimento)):
-                    altitude.append((k * incl) + altit) 
+                if tipo_entrada == "Intervalo":
+                    comprimento = list(np.arange(0, comp + discret, discret))
+                    for k in range(len(comprimento)):
+                        altitude.append((k * incl) + altit) 
         
         expander.divider()
         expander.markdown(":orange[Secções transversais do " + str(labels[i]) + ":]")
