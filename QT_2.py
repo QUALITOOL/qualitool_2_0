@@ -10,7 +10,7 @@ import streamlit as st
 from PIL import Image
 
 #opening the image
-image = Image.open('C:\Flavya\MQA\QUALI_TOOL\QT_2_0\qualitool_local\LOGO.png')
+image = Image.open('LOGO.png')
 
 bar = st.sidebar
 bar.image(image, output_format="PNG")
