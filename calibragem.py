@@ -114,28 +114,28 @@ def plotar(lista_parametros, lista_coeficientes,
 
 
 def calibragem(selected, menu):
-    if selected == menu[3]:
-        st.markdown('#### Modelagem com os coeficientes definidos'
-                    + ' :orange[manualmente]:')
-        lista_modelagem, n_trib, delta, labels, lista_tabs, clas_rio = inicio()
-        lista_parametros = dados_iniciais(lista_modelagem, n_trib,
-                                          labels, lista_tabs)
+    # if selected == menu[3]:
+    #     st.markdown('#### Modelagem com os coeficientes definidos'
+    #                 + ' :orange[manualmente]:')
+    #     lista_modelagem, n_trib, delta, labels, lista_tabs, clas_rio = inicio()
+    #     lista_parametros = dados_iniciais(lista_modelagem, n_trib,
+    #                                       labels, lista_tabs)
 
-        lista_coeficientes = coeficientes(lista_modelagem, n_trib,
-                                          labels, lista_tabs)
+    #     lista_coeficientes = coeficientes(lista_modelagem, n_trib,
+    #                                       labels, lista_tabs)
 
-        lista_retirada = fun_retiradas(
-            lista_modelagem, n_trib, labels, lista_tabs)
+    #     lista_retirada = fun_retiradas(
+    #         lista_modelagem, n_trib, labels, lista_tabs)
 
-        lista_despejos = fun_despejos(lista_modelagem, n_trib,
-                                      labels, lista_tabs)
+    #     lista_despejos = fun_despejos(lista_modelagem, n_trib,
+    #                                   labels, lista_tabs)
 
-        # botão
-        botao = st.button(
-            'Clique aqui para rodar a modelagem',
-            type='primary')
+    #     # botão
+    #     botao = st.button(
+    #         'Clique aqui para rodar a modelagem',
+    #         type='primary')
 
-        if botao:
-            plotar(lista_parametros, lista_coeficientes,
-                   lista_despejos, lista_retirada, delta)
+    #     if botao:
+    #         plotar(lista_parametros, lista_coeficientes,
+    #                lista_despejos, lista_retirada, delta)
     return
