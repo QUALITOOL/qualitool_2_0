@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 from layout_modelagem import inicio, dados_iniciais, coeficientes
-from layout_modelagem import fun_retiradas, fun_despejos
+from layout_modelagem import fun_contrib_retirad
 from equacoes import equacoes_calibragem
 from otimizador import algoritimo
 import matplotlib.pyplot as plt
