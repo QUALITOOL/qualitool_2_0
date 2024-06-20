@@ -108,7 +108,7 @@ def modelagem(selected, menu):
 
 
 
-        lista_modelagem, n_trib, delta, labels, lista_tabs, clas_rio = inicio()
+        lista_modelagem, n_trib, labels, lista_tabs = inicio()
 
 
 
@@ -124,12 +124,12 @@ def modelagem(selected, menu):
         lista_despejos = fun_despejos(lista_modelagem, n_trib,
                                       labels, lista_tabs)
 
-        # botão
-        botao = st.button(
-            'Clique aqui para rodar a modelagem',
-            type='primary')
+        # # botão
+        # botao = st.button(
+        #     'Clique aqui para rodar a modelagem',
+        #     type='primary')
 
-        if botao:
-            plotar(lista_parametros, lista_coeficientes,
-                   lista_despejos, lista_retirada, delta)
+        # if botao:
+        #     plotar(lista_parametros, lista_coeficientes,
+        #            lista_despejos, lista_retirada, delta)
     return
