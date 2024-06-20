@@ -3,3 +3,5 @@ pandas
 sympy
 matplotlib
 streamlit-option-menu
+pyproj
+geopandas

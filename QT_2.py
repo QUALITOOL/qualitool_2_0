@@ -1,4 +1,4 @@
-# streamlit run C:\Flavya\MQA\QUALI_TOOL\QT_2_0\QT_2.py
+# streamlit run C:\Flavya\MQA\QUALI_TOOL\QT_2_0\qualitool_local\QT_2.py
 import streamlit as st
 from streamlit_option_menu import option_menu
 from introducao import introducao
@@ -8,17 +8,9 @@ from instrucoes import teste
 import streamlit as st
 
 from PIL import Image
-# page_bg_img = """
-# <style>
-# [data-testid="stAppViewContainer"] {
-# background-color: #212750;
-# }
-# </style>
-# """
-# st.markdown(page_bg_img, unsafe_allow_html=True)
-#opening the image
 
-image = Image.open('LOGO.png')
+#opening the image
+image = Image.open('C:\Flavya\MQA\QUALI_TOOL\QT_2_0\qualitool_local\LOGO.png')
 
 bar = st.sidebar
 bar.image(image, output_format="PNG")

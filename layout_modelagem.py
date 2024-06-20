@@ -1,12 +1,17 @@
 import streamlit as st
 import pandas as pd
+import numpy as np
+
 
 
 def inicio():
+
     st.divider()
     dados_anterior = st.checkbox("Preenchimento automático.")
     if dados_anterior:
-        uploaded_file = st.file_uploader("Submeter o arquivo 'DadosEntrada.xlsx' construído anteriormente:")
+        uploaded_file = st.file_uploader("Submeter o arquivo 'DadosEntrada.xlsx'"
+                                         + " construído anteriormente:",
+                                         type=["xlsx"])
         if uploaded_file is not None:
             dataframe = pd.read_excel(uploaded_file)
             st.write(dataframe)
@@ -17,36 +22,31 @@ def inicio():
     else:
         st.warning('''Se for a sua primeira vez no Qualitool 2.0,
         você terá que preencher os dados de forma manual.''',
-        icon="❕")
+                  icon="❕")
     st.divider()
+    
     col_1, col_2 = st.columns(2)
-
-    classe_rio = col_2.slider(
-        'Qual a classe do rio, segundo CONAMA n° 357/05?',
-        1, 4, 2)
-
-    col_1.warning('''Atenção! Caso a tela atualize os dados já preenchidos
+    col_2.warning('''Atenção! Caso a tela atualize os dados já preenchidos
                   serão pertidos e devão ser preenchidos novamente.''',
                   icon="⚠️")
 
     with col_1:
         st.markdown('Qual(s) parâmetro(s) modelar?')
         col_1_1, col_1_2 = st.columns(2)
-        modelar_od = col_1_1.checkbox('OD')
-        modelar_dbo = col_1_1.checkbox('DBO')
-        modelar_n = col_1_1.checkbox('Nitrogênio')
-        modelar_p = col_1_2.checkbox('Fósforo')
-        modelar_colif = col_1_2.checkbox('Coliformes')
+        modelar_od = col_1_1.checkbox('OD', value=True)
+        if modelar_od:
+                modelar_k_2 = col_1_1.checkbox('k2 tabelado')
+        else:
+            modelar_k_2 = False
+        modelar_dbo = col_1_1.checkbox('DBO', value=True)
+        modelar_n = col_1_2.checkbox('Nitrogênio', value=True)
+        modelar_p = col_1_2.checkbox('Fósforo', value=True)
+        modelar_colif = col_1_2.checkbox('Coliformes', value=True)
     n_tributarios = col_2.number_input(
         'Quantidade de tributários modeláveis:',
         min_value=0)
-    lista_modelagem = [modelar_od, modelar_dbo, modelar_n,
+    lista_modelagem = [modelar_od, modelar_k_2, modelar_dbo, modelar_n,
                        modelar_p, modelar_colif]
-
-    delta = col_2.number_input(
-        'Delta de distância para integração '
-        + ' de cada segmento (km):',
-        min_value=0.100, step=1e-3, format="%.3f")
 
     lista_tabs = ["tab0"]
     labels = ["Rio principal"]
@@ -55,267 +55,320 @@ def inicio():
         labels.append("Tributário " + str(n_trib + 1))
     lista_tabs = st.tabs(labels)
 
-
-    return (lista_modelagem, n_tributarios,
-            delta, labels, lista_tabs, classe_rio)
+    return (lista_modelagem, n_tributarios, labels, lista_tabs)
 
 
 
-
+############################ DADOS INICIAIS #############################
 def dados_iniciais(lista_modelagem, n_tributarios, labels, lista_tabs):
     # DADOS DE ENTRADA INICIAIS
-    list_qr = []
-    list_od = []
-    list_dbo5 = []
-    list_temperatura = []
+    list_valor_i = []
+    list_comprimento = []
+    list_longitude = []
+    list_latitude = []
     list_altitude = []
-    list_colif = []
-    list_norgr = []
-    list_namonr = []
-    list_enitritor = []
-    list_nnitrator = []
-    list_porgr = []
-    list_pinorgr = []
-    list_dist_trib = []
-    list_comp_trib = []
+    list_secaotrav = []
+
+    
+    list_name_hid = ['Latitude (UTM)',
+                    'Longitude (UTM)',
+                    'Comprimento (m)',
+                    'Rugosidade (manning)',
+                    'Largura (m)',
+                    'Ângulo esquerdo (°)',
+                    'Ângulo direito (°)']
+    list_valores_hid = [None, None, None, 0.0, 0.0, 0.0, 0.0]
 
     for i in range(n_tributarios + 1):
+        comprimento = []
+        longitude = []
+        latitude = []
+        altitude = []
+        preecheu = False
         expander = lista_tabs[i].expander(
             "**:orange[DADOS DE ENTRADA INICIAIS]**")
+        col_11, col_12 = expander.columns(2)
+        col_121, col_122 = col_12.columns(2)
+        with col_11:
+            tipo_entrada = st.radio(str(i) + ". Tipo de entrada dos dados espaciais:",
+                                        ["Intervalo", "Manual","GeoJSON"],
+                                        horizontal=True)
+            df_esp = pd.DataFrame(columns=[str(i) + '. Latitude (UTM)', str(i) + '. Longitude (UTM)',
+                                            str(i) + '. Altitude (m)', str(i) + '. Comprimento (m)'])
+        
+
+        if tipo_entrada == "Intervalo":
+            col0_1, col0_2 = expander.columns(2)
+
+            comp = col0_1.number_input(
+                'Comprimento do ' + str(labels[i]) + ' (m)'
+                + ' *a ser modelado*',
+                min_value=150.0, step=1e-2, format="%.2f")
+            
+            col1_1, col1_2 = col0_2.columns(2)
+            
+            altit = col1_1.number_input(
+                str(i) + '. Altitude inicial (m)', value=50.0,
+                min_value=1.0, step=1e-2, format="%.2f")
+            
+            incl = col1_2.number_input(
+                str(i) + '. Inclinação (m/m)',
+                min_value=0.0001, step=1e-4, format="%.4f")
+
+
+        if tipo_entrada == "Manual":
+
+            expander.warning('''Adicionar ou a **Latitude e Longitude** ou o **Comprimento**.''',
+                  icon="❕")
+            df_espacial = expander.data_editor(df_esp, num_rows="dynamic")
+            if len(df_espacial[str(i) + '. Latitude (UTM)']) > 0:
+                if df_espacial[str(i) + '. Latitude (UTM)'][0] == None:
+                    comprimento = list(df_espacial.iloc[:,3])
+                else:
+                    latitude = list(df_espacial.iloc[:,0])
+                    longitude = list(df_espacial.iloc[:,1])
+                    preecheu = True
+                altitude = list(df_espacial.iloc[:,2])
+
+    
+        if tipo_entrada == "GeoJSON":
+            df_espacial = expander.file_uploader(str(i) +
+                                                ". ⚠️ Submeter o arquivo .GeoJSON, em WGS 84 UTM," +
+                                                " contendo somente a coluna 'Altitude' em metros.",
+                                                type=["geojson"])
+            
+            if df_espacial is not None:
+                import geopandas as gpd
+                gdf = gpd.read_file(df_espacial)
+                preecheu = True
+                for x in range(len(gdf)):
+                    longitude.append(gdf["geometry"][x].x)
+                    latitude.append(gdf["geometry"][x].y)
+
+                altitude = list(gdf.iloc[:,1])
+
+        expander.divider()
         col1, col2 = expander.columns(2)
 
         with col1:
-            st.markdown("##### :orange[Geral:]")
-            if i > 0:
-                dist_tributario = st.number_input(
-                    'Ponto do ' + str(labels[i]) + ' em relação a montante' +
-                    ' do Rio Principal (km)',
-                    min_value=0.0, step=1e-3, format="%.3f")
-                list_dist_trib.append(dist_tributario)
-            comp_tributario = st.number_input(
-                'Comprimento do ' + str(labels[i]) + ' (km)'
-                + ' *a ser modelado*',
-                min_value=150.0, step=1e-3, format="%.3f")
-            list_comp_trib.append(comp_tributario)
-            qr = st.number_input(
-                'Vazão do ' + str(labels[i]) + ' (m³/s)',
-                min_value=3.3, step=1e-3, format="%.3f")
-            list_qr.append(qr)
-            od = st.number_input(
-                'OD do ' + str(labels[i]) + ' (mg/L)',
-                min_value=15.540, step=1e-3, format="%.3f")
-            list_od.append(od)
-            dbo5 = st.number_input(
-                'DBO5 do ' + str(labels[i]) + ' (mg/L)',
-                min_value=8.0, step=1e-3, format="%.3f")
-            list_dbo5.append(dbo5)
-            temperatura = st.number_input(
-                'Temperatura do ' + str(labels[i]) + ' (°C)',
-                min_value=23.0, step=1e-3, format="%.3f")
-            list_temperatura.append(temperatura)
-            altitude = st.number_input(
-                'Altitude acima do nível do mar do '
-                + str(labels[i]) + ' (mg/L)',
-                min_value=830.0, step=1e-3, format="%.3f")
-            list_altitude.append(altitude)
+            st.markdown(":orange[Variáveis iniciais do " + str(labels[i]) + ":]")
+            
+            discret = col1.number_input(
+                str(i) + '. Discretização (m)', value=50.0,
+                min_value=0.1, step=1e-2, format="%.2f")
+            
+            list_name = ['Vazão (m³/s)']
+            list_valores = [0]
+            if lista_modelagem[0]:
+                list_name.extend(['Oxigênio dissolvido (mg/L)',
+                                  'DBO (mg/L)'])
+                list_valores.extend([0.0, 0.0])
+            if lista_modelagem[3]:
+                list_name.extend(['Nitrogênio orgânico (mg/L)',
+                                  'Amônia (mg/L)',
+                                  'Nitrito (mg/L)'])
+                list_valores.extend([0.0, 0.0, 0.0])
+            if lista_modelagem[4]:
+                list_name.extend(['Fósforo orgânico (mg/L)',
+                                  'Fósforo inorgânico (mg/L)'])
+                list_valores.extend([0.0, 0.0])
+            if lista_modelagem[5]:
+                list_name.append('E-coli (mg/L)')
+                list_valores.append(0.0)
+                
+            df_conc = pd.DataFrame({str(i) + '. Descrição': list_name, 'Valores': list_valores})
+            df_espacial = st.data_editor(df_conc, disabled=[str(i) + '. Descrição'])
+
+
         with col2:
-            st.markdown("##### :orange[Nitrogênio:]")
-            norgr = st.number_input(
-                'Nitrogênio orgânico do '
-                + str(labels[i])+' (mg/L)',
-                min_value=0.2, step=1e-3, format="%.3f")
-            list_norgr.append(norgr)
-            namonr = st.number_input(
-                'Amônia-N do ' + str(labels[i])
-                + ' (mg/L)',
-                min_value=0.5, step=1e-3, format="%.3f")
-            list_namonr.append(namonr)
-            enitritor = st.number_input(
-                'Nitrito-N do ' + str(labels[i])
-                + ' (mg/L)',
-                min_value=0.1, step=1e-3, format="%.3f")
-            list_enitritor.append(enitritor)
-            nnitrator = st.number_input(
-                'Nitrato-N do ' + str(labels[i])
-                + ' (mg/L)',
-                min_value=0.1, step=1e-3, format="%.3f")
-            list_nnitrator.append(nnitrator)
-            st.markdown("##### :orange[Fósforo:]")
-            porgr = st.number_input(
-                'P orgânico do ' + str(labels[i])
-                + ' (mg/L)',
-                min_value=0.01, step=1e-3, format="%.3f")
-            list_porgr.append(porgr)
-            pinorgr = st.number_input(
-                'P inorgânico do ' + str(labels[i])
-                + ' (mg/L)',
-                min_value=0.02, step=1e-3, format="%.3f")
-            list_pinorgr.append(pinorgr)
-            st.markdown("##### :orange[Coliformes:]")
-            colif = st.number_input(
-                'Coliformes no ' + str(labels[i])
-                + ' (NMP/100ml)',
-                min_value=0.0, step=1e-3, format="%.3f")
-            list_colif.append(colif)
-    lista_parametros = [list_qr, list_od, list_dbo5, list_temperatura,
-                        list_altitude, list_colif, list_norgr,
-                        list_namonr, list_enitritor, list_nnitrator,
-                        list_porgr, list_pinorgr,
-                        list_dist_trib, list_comp_trib]
+            if preecheu:
+                on = st.toggle("Visualizar dados espaciais")
+                zona = col_121.number_input(
+                    str(i) + '. WGS 84 - UTM - Zona:', min_value=0, value=22)
+                hemisferio = col_122.radio(str(i) + '. Hemisfério:', ['Sul', 'Norte'],
+                                        horizontal=True)
+            
+                if on:
+                    if hemisferio == 'Sul':
+                        hemisferio = 'south'
+                    else:
+                        hemisferio = 'north'
+
+                    from pyproj import Proj
+
+                    df_plot = pd.DataFrame({'UTMlon': longitude, 'UTMlat': latitude})
+                    myProj = Proj('+proj=utm +zone=' + str(zona)
+                                  + ' +' + str(hemisferio) + ' +ellps=WGS84',
+                                  preserve_units=False)
+                    df_plot['lon'], df_plot['lat'] = myProj(df_plot['UTMlon'].values,
+                                                            df_plot['UTMlat'].values,
+                                                            inverse=True)
+                    st.map(df_plot, size = 1, color='#007FFF')
+            else:       
+            
+                comprimento = list(np.arange(0, comp + discret, discret))
+                for k in range(len(comprimento)):
+                    altitude.append((k * incl) + altit) 
+        
+        expander.divider()
+        expander.markdown(":orange[Secções transversais do " + str(labels[i]) + ":]")
+        col_3_1, col_3_2 = expander.columns(2)
+        n_pontos = col_3_1.number_input(
+            str(i) + '. Quantidade de ponto que alteram os valores'
+            + ' de uma ou mais variáveis hidráulicas:',
+            min_value=0)
+        df_hid = pd.DataFrame({str(i) + '. Descrição': list_name_hid})        
+        for k in range(n_pontos + 1):
+            df_hid['Ponto ' + str(k)] = list_valores_hid
+        df_hid_f = expander.data_editor(df_hid, disabled=[str(i) + '. Descrição'])
+        hidr = []
+        for k in range(n_pontos + 1):
+            hidr.append(list(df_hid_f['Ponto ' + str(k)]))
+
+
+        list_comprimento.append(comprimento)
+        list_longitude.append(longitude)
+        list_latitude.append(latitude)
+        list_altitude.append(altitude)
+        list_valor_i.append(list(df_espacial['Valores']))
+        list_secaotrav.append(hidr)
+
+    lista_parametros = [list_valor_i, list_comprimento, list_longitude,
+                        list_latitude, list_altitude, list_secaotrav]
     return lista_parametros
 
 
+############################ COEFICIENTES #############################
 def coeficientes(lista_modelagem, n_tributarios, labels, lista_tabs):
     # COEFICIENTES DDO MODEDELO
-    list_kso = []
-    list_koa = []
-    list_kan = []
-    list_knn = []
-    list_o2namon = []
-    list_o2nnitri = []
-    list_knitr = []
-    list_m = []
-    list_n = []
-    list_k2_max = []
-    list_kspo = []
-    list_koi = []
-    list_kb = []
-    list_snamon = []
-    list_k1 = []
-    list_kd = []
-    list_ks = []
-    list_spinorg = []
-    list_fotossintese = []
-    list_respiracao = []
-    list_sedimento = []
-    list_lrd = []
+
+    list_name = ['Latitude (UTM)',
+                 'Longitude (UTM)',
+                 'Comprimento (m)',
+                 'Temperatura (°C)']
+    list_valores = [None, None, None, 22.0]
+    if lista_modelagem[1]:
+        list_name.extend(['k2 (1/d)',
+                            'k2 máximo (1/d)'])
+        list_valores.extend([0.0, 0.0])
+    if lista_modelagem[0]:
+        list_name.extend(['k1 (1/d)',
+                            'kd (1/d)',
+                            'ks (1/d)',
+                            'lrd (gDBO5/m.d)',
+                            'sd (1/d)'])
+        list_valores.extend([0.0, 0.0, 0.0, 0.0, 0.0])
+    if lista_modelagem[0] == True and lista_modelagem[3] == True:
+        list_name.append('O2namon (mgO2/mgNamon oxid)')
+        list_valores.append(0.0)
+    if lista_modelagem[3]:
+        list_name.extend(['koa (1/d)',
+                            'kso (1/d)',
+                            'kan (1/d)',
+                            'Snamon (g/m2.d)',
+                            'knn (1/d)',
+                            'knitr (1/d)'])
+        list_valores.extend([0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
+    if lista_modelagem[4]:
+        list_name.extend(['koi (1/d)',
+                            'kspo (1/d)',
+                            'spinorg (1/d)'])
+        list_valores.extend([0.0, 0.0, 0.0])
+    if lista_modelagem[5]:
+        list_name.append('kb (1/d)')
+        list_valores.append(0.0)
+
+    lista_coeficiente = [list_name]
+
+
     for i in range(n_tributarios + 1):
         expander = lista_tabs[i].expander(
             "**:green[COEFICIENTES DO MODELO]**")
-        col1, col2 = expander.columns(2)
+        col_1, col_2 = expander.columns(2)
 
-        with col1:
-            st.markdown("##### :green[Nitrogênio]")
-            kso = st.number_input('kso: Coef. sedimentação Norg do '
-                                  + str(labels[i]) + ' (1/d)',
-                                  min_value=0.05, step=1e-3, format="%.3f")
-            list_kso.append(kso)
-            koa = st.number_input('koa: Coef. conversão Norg-Namon do '
-                                  + str(labels[i]) + ' (1/d)',
-                                  min_value=0.20, step=1e-3, format="%.3f")
-            list_koa.append(koa)
-            kan = st.number_input('kan: Coef. conversão Namon-Nnitrito do '
-                                  + str(labels[i]) + ' (1/d)',
-                                  min_value=0.150, step=1e-3, format="%.3f")
-            list_kan.append(kan)
-            knn = st.number_input('knn: Coef. conversão Nnitrito-Nnitrato do '
-                                  + str(labels[i]) + ' (1/d)',
-                                  min_value=0.80, step=1e-3, format="%.3f")
-            list_knn.append(knn)
-            snamon = st.number_input(
-                'Snamon: Coef. liberação Namon pelo sedimento de fundo do '
-                + str(labels[i]) + ' (g/m2.d)',
-                min_value=0.40, step=1e-3, format="%.3f")
-            list_snamon.append(snamon)
-            o2namon = st.number_input(
-                'O2namon: O2 equiv. conversão Namon-Nnitrito do '
-                + str(labels[i])
-                + ' (mgO2/mgNamon oxid)',
-                min_value=3.2, step=1e-3, format="%.3f")
-            list_o2namon.append(o2namon)
-            o2nnitri = st.number_input(
-                'O2nitri: O2 equiv. conversão Nnitrito-Nnitrato do '
-                + str(labels[i]) + ' (mgO2/mgNnitrito oxid)',
-                min_value=1.1, step=1e-3, format="%.3f")
-            list_o2nnitri.append(o2nnitri)
-            knitr = st.number_input(
-                'knitr: Coef. inibição da nitrificação por baixo OD do '
-                + str(labels[i]) + ' (1/d)',
-                min_value=0.6, step=1e-3, format="%.3f")
-            list_knitr.append(knitr)
-            st.markdown("##### :green[Cargas difusas internas (sem vazão)]")
-            fotossintese = st.number_input(
-                "P': OD - Taxa produção de O2 por fotossíntese do "
-                + str(labels[i]) + ' (g/m2.d)',
-                min_value=0.0, step=1e-3,
-                format="%.3f")
-            list_fotossintese.append(fotossintese)
-            respiracao = st.number_input(
-                "R': OD - Taxa consumo de O2 por respiração do "
-                + str(labels[i]) + ' (g/m2.d)',
-                min_value=0.0, step=1e-3,
-                format="%.3f")
-            list_respiracao.append(respiracao)
-            sedimento = st.number_input(
-                "S': OD - Taxa consumo de O2 por demanda do sedimento do "
-                + str(labels[i]) + ' (g/m2.d)',
-                min_value=0.0, step=1e-3,
-                format="%.3f")
-            list_sedimento.append(sedimento)
-            lrd = st.number_input(
-                'lrd: DBO - Carga linear distribuída ao longo do '
-                + str(labels[i]) + ' (gDBO5/m.d)',
-                min_value=0.0, step=1e-3,
-                format="%.3f")
-            list_lrd.append(lrd)
-        with col2:
-            st.markdown("##### :green[Desoxigenação]")
-            k1 = st.number_input(
-                'k1: Coef. desoxigenação do ' + str(labels[i])
-                + ' (1/d)', min_value=0.120, step=1e-3, format="%.3f")
-            list_k1.append(k1)
-            kd = st.number_input(
-                'kd: Coef. sedimentação DBO do ' + str(labels[i])
-                + ' (1/d)', min_value=0.120, step=1e-3, format="%.3f")
-            list_kd.append(kd)
-            ks = st.number_input(
-                'ks: Coef. decomposição DBO do ' + str(labels[i])
-                + ' (1/d)', min_value=0.0, step=1e-3, format="%.3f")
-            list_ks.append(ks)
-            st.markdown("##### :green[Reaeração - $$k2 = m * Q^{-n}$$]")
-            m = st.number_input('m - Coef. reaeração do ' + str(labels[i]),
-                                min_value=0.0, step=1e-3, format="%.3f")
-            list_m.append(m)
-            n = st.number_input('n - Coef. reaeração do ' + str(labels[i]),
-                                min_value=0.0, step=1e-3, format="%.3f")
-            list_n.append(n)
-            k2_max = st.number_input('Valor máximo aceito para K2 do '
-                                     + str(labels[i]),
-                                     min_value=0.0, step=1e-3,
-                                     format="%.3f")
-            list_k2_max.append(k2_max)
-            st.markdown("##### :green[Fósforo]")
-            kspo = st.number_input('kspo: Coef. sedimentação Porg do '
-                                   + str(labels[i]) + ' (1/d)',
-                                   min_value=0.030, step=1e-3,
-                                   format="%.3f")
-            list_kspo.append(kspo)
-            koi = st.number_input('koi: Coef. conversão Porg-Pinorg do '
-                                  + str(labels[i]) + ' (1/d)',
-                                  min_value=0.250, step=1e-3,
-                                  format="%.3f")
-            list_koi.append(koi)
-            spinorg = st.number_input(
-                'spiorg: Coef. liberação Pinorg pelo sedimento de fundo do '
-                + str(labels[i]) + ' (g/m2.d)',
-                min_value=0.10, step=1e-3, format="%.3f")
-            list_spinorg.append(spinorg)
-            st.markdown("##### :green[Coliformes]")
-            kb = st.number_input('kb: Coef. decaimento de coliformes do '
-                                 + str(labels[i]) + ' (1/d)',
-                                 min_value=0.0, step=1e-3,
-                                 format="%.3f")
-            list_kb.append(kb)
+        option = col_1.selectbox(
+            str(i) + '. Tem dúvida do que significa cada variável?',
+            (list_name),
+            index=None,
+            placeholder="Selecione o nome da variável...",)
+        if option != None:
+            with col_2.chat_message("human", avatar="ai"):
+                if option == 'Latitude (UTM)':
+                    st.write('''Latitude na projeção WGS 84 em coordenadas UTM.''')
+                elif option == 'Longitude (UTM)':
+                    st.write('''Longitude na projeção WGS 84 em coordenadas UTM.''')
+                elif option == 'Comprimento (m)':
+                    st.write('''Comprimento a partir do trecho inicial do rio, em metros.''')
+                elif option == 'Temperatura (°C)':
+                    st.write('''Temperatura do rio, em grau celsius.''')
+                elif option == 'k1 (1/d)':
+                    st.write('''Coeficiente de desoxigenação, na temperatura de 20°C.''')
+                elif option == 'kd (1/d)':
+                    st.write('''Coeficiente de decomposição de DBO, na temperatura de 20°C.''')
+                elif option == 'ks (1/d)':
+                    st.write('''Coeficiente de sedimentação de DBO, na temperatura de 20°C.''')
+                elif option == 'lrd (gDBO5/m.d)':
+                    st.write('''Carga linear distribuída ao longo do rio, na temperatura de 20°C.''')
+                elif option == 'sd (1/d)':
+                    st.write('''Taxa consumo de O2 por demanda do sedimento, na temperatura de 20°C.''')
+                elif option == 'O2namon (mgO2/mgNamon oxid)':
+                    st.write('''Relação entre o oxigênio consumido por cada unidade de 
+                             amônia oxidada a nitrito, na temperatura de 20°C.''')
+                elif option == 'koa (1/d)':
+                    st.write('''Coeficiente de conversão do nitrogênio orgânico 
+                             a amônia, na temperatura de 20°C.''')
+                elif option == 'kso (1/d)':
+                    st.write('''Coeficiente de sedimentação do nitrogênio 
+                             orgânico, na temperatura de 20°C.''')
+                elif option == 'kan (1/d)':
+                    st.write('''Coeficiente de conversão da amônia a 
+                             nitrito, na temperatura de 20°C.''')
+                elif option == 'Snamon (g/m2.d)':
+                    st.write('''Fluxo de liberação de amônia pelo 
+                             sedimento de fundo, na temperatura de 20°C.''')
+                elif option == 'knn (1/d)':
+                    st.write('''Coeficiente de conversão do nitrito a nitrato
+                             , na temperatura de 20°C.''')
+                elif option == 'knitr (1/d)':
+                    st.write('''Coeficiente de inibição da nitrificação por baixo OD, 
+                             na temperatura de 20°C. \n Usado para o cálculo do Fator de
+                             correção do coeficiente de nitrificação em função do OD.''')
+                elif option == 'koi (1/d)':
+                    st.write('''Coeficiente de conversão do fósforo orgânico a fósforo 
+                             inorgânico, na temperatura de 20°C.''')
+                elif option == 'kspo (1/d)':
+                    st.write('''Coeficiente de sedimentação do fósforo orgânico
+                             , na temperatura de 20°C.''')
+                elif option == 'spinorg (1/d)':
+                    st.write('''Fluxo de liberação de fósforo inorgânico pelo sedimento 
+                             de fundo, na temperatura de 20°C.''')
+                elif option == 'kb (1/d)':
+                    st.write('''Coeficiente de decaimento de coliforme, na temperatura de 20°C.''')
+                else:
+                    st.text('''ERRO''')
+        else:
+            col_2.warning('''Adicionar ou a **Latitude e Longitude** ou o **Comprimento**.''',
+                             icon="❕")
+        expander.divider()
+        expander.markdown(":green[Variáveis do " + str(labels[i]) +":]")
+        col_11, col_21 = expander.columns(2)
+        n_pontos = col_11.number_input(
+            str(i) + '. Quantidade de ponto que alteram os valores'
+            + ' de um ou mais coeficientes tabelados:',
+            min_value=0)
+        df_coef = pd.DataFrame({str(i) + '. Descrição': list_name})        
+        for k in range(n_pontos + 1):
+            df_coef['Ponto ' + str(k)] = list_valores
+        df_coef_f = expander.data_editor(df_coef, disabled=[str(i) + '. Descrição'])
+        coef = []
+        for k in range(n_pontos + 1):
+            coef.append(list(df_coef_f['Ponto ' + str(k)]))
 
-        lista_coeficiente = [list_kso, list_koa, list_kan, list_knn,
-                             list_o2namon, list_o2nnitri, list_knitr,
-                             list_m, list_n, list_k2_max, list_kspo,
-                             list_koi, list_kb, list_snamon, list_k1,
-                             list_kd, list_ks, list_spinorg, list_fotossintese,
-                             list_respiracao, list_sedimento, list_lrd]
+        lista_coeficiente.append(coef)
     return lista_coeficiente
 
 
+############################ RETIRADAS #############################
 def fun_retiradas(lista_modelagem, n_tributarios, labels, lista_tabs):
     # RETIRADAS
     retirada = []
