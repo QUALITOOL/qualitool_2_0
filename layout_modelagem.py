@@ -205,19 +205,19 @@ def dados_iniciais(lista_modelagem, n_tributarios, labels, lista_tabs):
                                                             inverse=True)
                     st.map(df_plot, size = 1, color='#007FFF')
             else:       
-                if tipo_entrada == "Intervalo":
-                    comprimento = list(np.arange(0.0, comp + discret, discret))
-                    for k in range(len(comprimento)):
-                        altitude.append((k * incl) + altit) 
+            
+                comprimento = list(np.arange(0, comp + discret, discret))
+                for k in range(len(comprimento)):
+                    altitude.append((k * incl) + altit) 
         
         expander.divider()
         expander.markdown(":orange[Secções transversais do " + str(labels[i]) + ":]")
         col_3_1, col_3_2 = expander.columns(2)
         n_pontos = col_3_1.number_input(
-            str(i) + '. Quantidade de ponto que alteram os valores'
+            str(i) + '. Quantidade de pontos que alteram os valores'
             + ' de uma ou mais variáveis hidráulicas:',
             min_value=0)
-        df_hid = pd.DataFrame({str(i) + '. Descrição': list_name_hid})        
+        df_hid = pd.DataFrame({str(i) + '. Descrição': list_name_hid})
         for k in range(n_pontos + 1):
             df_hid['Ponto ' + str(k)] = list_valores_hid
         df_hid_f = expander.data_editor(df_hid, disabled=[str(i) + '. Descrição'])
@@ -235,7 +235,7 @@ def dados_iniciais(lista_modelagem, n_tributarios, labels, lista_tabs):
 
     lista_parametros = [list_valor_i, list_comprimento, list_longitude,
                         list_latitude, list_altitude, list_secaotrav]
-    return lista_parametros
+    return lista_parametros, list_name, list_valores
 
 
 ############################ COEFICIENTES #############################
@@ -369,185 +369,98 @@ def coeficientes(lista_modelagem, n_tributarios, labels, lista_tabs):
 
 
 ############################ RETIRADAS #############################
-def fun_retiradas(lista_modelagem, n_tributarios, labels, lista_tabs):
-    # RETIRADAS
-    retirada = []
-    lista_n_retiradas = []
-    lista_dist_retiradas = []
-    lista_q_retiradas = []
+def fun_contrib_retirad(lista_modelagem, n_tributarios, labels, lista_tabs, list_name, list_valores):
+
+    list_name_cr = ['ID (opcional)',
+                    'Latitude (UTM)',
+                    'Longitude (UTM)',
+                    'Comprimento (m)']
+    list_valores_cr = [None, None, None, None]
+
+    list_retiradas = []
+    list_ep = []
+    list_ed = []
+
     for j in range(n_tributarios + 1):
-        expander_0 = lista_tabs[j].expander("**:blue[RETIRADAS]**")
-        mensagem = (
-            'Possui algum ponto de captação de água no '
-            + str(labels[j]))
-        retiradas = expander_0.checkbox(mensagem)
+        
+        expander = lista_tabs[j].expander("**:blue[CONTRIBUIÇÕES E RETIRADAS]**")
 
-        retirada.append(retiradas)
-        if retirada[j]:
-            n_retiradas = expander_0.number_input(
-                'Número de retiradas do '
-                + str(labels[j]),
-                min_value=1)
-            lista_n_retiradas.append(n_retiradas)
-            lista_tabs_ret = []
-            labels_ret = []
-            for n_ret in range(lista_n_retiradas[j]):
-                lista_tabs_ret.append("tab" + str(n_ret))
-                labels_ret.append("Retirada " + str(n_ret + 1))
-            lista_tabs_ret = expander_0.tabs(labels_ret)
-
-            dist_retiradas = []
-            q_retiradas = []
-            for n_ret in range(lista_n_retiradas[j]):
-                dist_retirada = lista_tabs_ret[n_ret].number_input(
-                    'Distância da ' + str(labels_ret[n_ret]) + ' com o '
-                    + str(labels[j]) + ' (km)',
-                    min_value=0.0, step=1e-3, format="%.3f")
-                dist_retiradas.append(dist_retirada)
-                q_retirada = lista_tabs_ret[n_ret].number_input(
-                    'Vazão da ' + str(labels_ret[n_ret]) + ' do '
-                    + str(labels[j]),
-                    min_value=0.0, step=1e-3, format="%.3f")
-                q_retiradas.append(q_retirada)
-            lista_dist_retiradas.append(dist_retiradas)
-            lista_q_retiradas.append(q_retiradas)
-    lista_retirada = [lista_dist_retiradas, lista_q_retiradas, retirada]
-    return lista_retirada
+        retiradas = expander.checkbox(str(j) + '. Possui algum ponto de **captação de água**.')
+        ret = []
+        if retiradas:
+            col4_1, col4_2 = expander.columns(2)
+            col4_1.markdown(":blue[Retiradas do " + str(labels[j]) + ":]")
+            col4_2.warning('''Adicionar ou a **Latitude e Longitude** ou o **Comprimento**.''',
+                           icon="❕")
+            n_pontos_r = col4_1.number_input(
+                str(j) + '. Quantidade de ponto de captação:',
+                min_value=0)
+            list_name_ret = list_name_cr + ['Vazão (m³/s)']
+            list_valores_ret = list_valores_cr  + [0.0]
+            dfret = pd.DataFrame({str(j) + '. Variável': list_name_ret})
+            for k in range(n_pontos_r + 1):
+                dfret['Ponto ' + str(k)] = list_valores_ret
+            df_ret_f = expander.data_editor(dfret, disabled=[str(j) + '. Variável'])
+            for n in range(n_pontos_r + 1):
+                ret.append(list(df_ret_f['Ponto ' + str(n)]))
 
 
-def fun_despejos(lista_modelagem, n_tributarios, labels, lista_tabs):
-    # DESPEJOS
-    despejo = []
-    lista_n_despejos = []
-    lista_dist_despejos = []
-    lista_q_despejos = []
-    lista_od_despejos = []
-    list_dbo5_desp = []
-    list_norgr_desp = []
-    list_namonr_desp = []
-    list_enitritor_desp = []
-    list_nnitrator_desp = []
-    list_porgr_desp = []
-    list_pinorgr_desp = []
-    list_colif_desp = []
-    for i in range(n_tributarios + 1):
-        expander_1 = lista_tabs[i].expander("**:blue[DESPEJOS]**")
-        mensagem = (
-            'Possui algum ponto de despejo de despejo no '
-            + str(labels[i]))
-        despejos = expander_1.checkbox(mensagem)
-        despejo.append(despejos)
+        expander.divider()
+        contr_pontual = expander.checkbox(str(j) + '. Possui algum ponto de **contribuição pontual**.')
+        ep = []
+        if contr_pontual:
+            col4_1, col4_2 = expander.columns(2)
+            col4_1.markdown(":blue[Contribuições pontuais do " + str(labels[j]) + ":]")
+            col4_2.warning('''Adicionar ou a **Latitude e Longitude** ou o **Comprimento**.''',
+                           icon="❕")
+            n_pontos_ep = col4_1.number_input(
+                str(j) + '. Quantidade de pontos de entradas pontuais:',
+                min_value=0)
+            list_name_ep = list_name_cr + list_name
+            list_valores_ep = list_valores_cr  + list_valores
+            dfep = pd.DataFrame({str(j) + '. Variável': list_name_ep})
+            for k in range(n_pontos_ep + 1):
+                dfep['Ponto ' + str(k)] = list_valores_ep
+            df_ep_f = expander.data_editor(dfep, disabled=[str(j) + '. Variável'])
+            for n in range(n_pontos_ep + 1):
+                ep.append(list(df_ep_f['Ponto ' + str(n)]))
 
-        if despejo[i]:
-            n_despejos = expander_1.number_input(
-                'Número de despejos do '
-                + str(labels[i]), min_value=1)
-            lista_n_despejos.append(n_despejos)
 
-            lista_tabs_desp = []
-            labels_desp = []
+        expander.divider()
+        contr_difusa = expander.checkbox(str(j) + '. Possui algum ponto de **contribuição difusa**.')
+        ed = []
+        if contr_difusa:
+            col4_1, col4_2 = expander.columns(2)
+            col4_1.markdown(":blue[Contribuições difusa do " + str(labels[j]) + ":]")
+            col4_2.warning('''Adicionar ou a **Latitude e Longitude** ou o **Comprimento**.''',
+                           icon="❕")
+            n_pontos_ed = col4_1.number_input(
+                str(j) + '. Quantidade de pontos de entradas difusas:',
+                min_value=0)
+            list_name_ed = ['ID (opcional)',
+                            'Latitude inicial (UTM)',
+                            'Latitude final (UTM)',
+                            'Longitude inicial (UTM)',
+                            'Longitude final (UTM)',
+                            'Comprimento inicial (m)',
+                            'Comprimento final (m)',
+                            'Vazão TOTAL (m³/s)']
+            list_valores_ed = [None, None, None, None, None, None, None]
+            list_name_f = list_name
+            del(list_name_f[0])
+            list_name_ed.extend(list_name_f)
+            list_valores_ed.extend(list_valores)
+            dfed = pd.DataFrame({str(j) + '. Variável': list_name_ed})
+            for k in range(n_pontos_ed + 1):
+                dfed['Ponto ' + str(k)] = list_valores_ed
+            df_ed_f = expander.data_editor(dfed, disabled=[str(j) + '. Variável'])
+            for n in range(n_pontos_ed + 1):
+                ed.append(list(df_ed_f['Ponto ' + str(n)]))
+        expander.divider()
+        list_retiradas.append(ret)
+        list_ep.append(ep)
+        list_ed.append(ed)
+    return 
 
-            for n_desp in range(lista_n_despejos[i]):
-                lista_tabs_desp.append("tab_desp" + str(n_desp))
-                labels_desp.append("Despejo " + str(n_desp + 1))
-            lista_tabs_desp = expander_1.tabs(labels_desp)
 
-            dist_despejos = []
-            q_despejos = []
-            od_despejos = []
-            dbo5_desp = []
-            norgr_desp = []
-            namonr_desp = []
-            enitritor_desp = []
-            nnitrator_desp = []
-            porgr_desp = []
-            pinorgr_desp = []
-            colif_desp = []
-            for n_desp in range(lista_n_despejos[i]):
-                col_d1, col_d2 = lista_tabs_desp[n_desp].columns(2)
-                with col_d1:
-                    st.markdown("##### :orange[Dados gerais:]")
-                    dist_despejo = st.number_input(
-                        'Distância da ' + str(labels_desp[n_desp])
-                        + ' com o ' + str(labels[i]) + ' (km)',
-                        min_value=0.0, step=1e-3, format="%.3f")
-                    dist_despejos.append(dist_despejo)
-                    q_despejo = st.number_input(
-                        'Vazão da ' + str(labels_desp[n_desp])
-                        + ' do ' + str(labels[i]),
-                        min_value=0.0, step=1e-3, format="%.3f")
-                    q_despejos.append(q_despejo)
-                    od_despejo = st.number_input(
-                        'OD da ' + str(labels_desp[n_desp])
-                        + ' do ' + str(labels[i]) + ' (mg/L)',
-                        min_value=0.0, step=1e-3, format="%.3f")
-                    od_despejos.append(od_despejo)
-                    dbo5_despejo = st.number_input(
-                        'DBO5 da ' + str(labels_desp[n_desp])
-                        + ' do ' + str(labels[i]) + ' (mg/L)',
-                        min_value=0.0, step=1e-3, format="%.3f")
-                    dbo5_desp.append(dbo5_despejo)
-                    st.markdown("##### :orange[Fósforo:]")
-                    porgr_despejo = st.number_input(
-                        'P orgânico da ' + str(labels_desp[n_desp])
-                        + ' do ' + str(labels[i])
-                        + ' (mg/L)',
-                        min_value=0.0, step=1e-3, format="%.3f")
-                    porgr_desp.append(porgr_despejo)
-                    pinorgr_despejo = st.number_input(
-                        'P inorgânico da ' + str(labels_desp[n_desp])
-                        + ' do ' + str(labels[i])
-                        + ' (mg/L)',
-                        min_value=0.0, step=1e-3, format="%.3f")
-                    pinorgr_desp.append(pinorgr_despejo)
-                with col_d2:
-                    st.markdown("##### :orange[Nitrogênio:]")
-                    norgr_despejo = st.number_input(
-                        'Nitrogênio orgânico da ' + str(labels_desp[n_desp])
-                        + ' do '
-                        + str(labels[i])+' (mg/L)',
-                        min_value=0.0, step=1e-3, format="%.3f")
-                    norgr_desp.append(norgr_despejo)
-                    namonr_despejo = st.number_input(
-                        'Amônia-N da ' + str(labels_desp[n_desp])
-                        + ' do ' + str(labels[i])
-                        + ' (mg/L)',
-                        min_value=0.0, step=1e-3, format="%.3f")
-                    namonr_desp.append(namonr_despejo)
-                    enitritor__despejo = st.number_input(
-                        'Nitrito-N da ' + str(labels_desp[n_desp])
-                        + ' do ' + str(labels[i])
-                        + ' (mg/L)',
-                        min_value=0.0, step=1e-3, format="%.3f")
-                    enitritor_desp.append(enitritor__despejo)
-                    nnitrator_despejo = st.number_input(
-                        'Nitrato-N da ' + str(labels_desp[n_desp])
-                        + ' do ' + str(labels[i])
-                        + ' (mg/L)',
-                        min_value=0.0, step=1e-3, format="%.3f")
-                    nnitrator_desp.append(nnitrator_despejo)
-                    st.markdown("##### :orange[Coliformes:]")
-                    colif_despejo = st.number_input(
-                        'Coliformes da ' + str(labels_desp[n_desp])
-                        + ' do ' + str(labels[i])
-                        + ' (NMP/100ml)',
-                        min_value=0.0, step=1e-3, format="%.3f")
-                    colif_desp.append(colif_despejo)
-            lista_dist_despejos.append(dist_despejos)
-            lista_q_despejos.append(q_despejos)
-            lista_od_despejos.append(od_despejos)
-            list_dbo5_desp.append(dbo5_desp)
-            list_norgr_desp.append(norgr_desp)
-            list_namonr_desp.append(namonr_desp)
-            list_enitritor_desp.append(enitritor_desp)
-            list_nnitrator_desp.append(nnitrator_desp)
-            list_porgr_desp.append(porgr_desp)
-            list_pinorgr_desp.append(pinorgr_desp)
-            list_colif_desp.append(colif_desp)
-    lista_despejo = [lista_dist_despejos, lista_q_despejos,
-                     lista_od_despejos, list_dbo5_desp, list_norgr_desp,
-                     list_namonr_desp, list_enitritor_desp,
-                     list_nnitrator_desp, list_porgr_desp, list_pinorgr_desp,
-                     list_colif_desp, despejo]
 
-    return lista_despejo

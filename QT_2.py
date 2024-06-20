@@ -37,4 +37,3 @@ with st.sidebar:
 introducao(selected, menu)
 teste(selected, menu)
 modelagem(selected, menu)
-calibragem(selected, menu)

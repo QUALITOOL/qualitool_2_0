@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 from layout_modelagem import inicio, dados_iniciais, coeficientes
-from layout_modelagem import fun_retiradas, fun_despejos
+from layout_modelagem import fun_contrib_retirad
 from equacoes import equacoes
 import matplotlib.pyplot as plt
 
@@ -108,7 +108,7 @@ def modelagem(selected, menu):
 
 
 
-        lista_modelagem, n_trib, labels, lista_tabs = inicio()
+        lista_modelagem, n_trib, labels, lista_tabs, list_name, list_valores = inicio()
 
 
 
@@ -118,11 +118,7 @@ def modelagem(selected, menu):
         lista_coeficientes = coeficientes(lista_modelagem, n_trib,
                                           labels, lista_tabs)
 
-        lista_retirada = fun_retiradas(
-            lista_modelagem, n_trib, labels, lista_tabs)
-
-        lista_despejos = fun_despejos(lista_modelagem, n_trib,
-                                      labels, lista_tabs)
+        fun_contrib_retirad(lista_modelagem, n_trib, labels, lista_tabs, list_name, list_valores)
 
         # # botão
         # botao = st.button(
