@@ -206,7 +206,7 @@ def dados_iniciais(lista_modelagem, n_tributarios, labels, lista_tabs):
                     st.map(df_plot, size = 1, color='#007FFF')
             else:       
             
-                comprimento = list(np.arange(0.0, comp + discret, discret))
+                comprimento = list(np.arange(0.0, float(comp) + float(discret), float(discret)))
                 for k in range(len(comprimento)):
                     altitude.append((k * incl) + altit) 
         
