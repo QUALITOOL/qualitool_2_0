@@ -108,11 +108,11 @@ def modelagem(selected, menu):
 
 
 
-        lista_modelagem, n_trib, labels, lista_tabs, list_name, list_valores = inicio()
+        lista_modelagem, n_trib, labels, lista_tabs = inicio()
 
 
 
-        lista_parametros = dados_iniciais(lista_modelagem, n_trib,
+        lista_parametros, list_name, list_valores = dados_iniciais(lista_modelagem, n_trib,
                                           labels, lista_tabs)
 
         lista_coeficientes = coeficientes(lista_modelagem, n_trib,
