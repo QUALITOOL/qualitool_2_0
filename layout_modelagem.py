@@ -4,19 +4,22 @@ import numpy as np
 
 
 
-def inicio():
+def inicio(paramentro):
 
     st.divider()
     dados_anterior = st.checkbox("Preenchimento automático.")
+    data = False
     if dados_anterior:
-        uploaded_file = st.file_uploader("Submeter o arquivo 'DadosEntrada.xlsx'"
+        uploaded_json = st.file_uploader("Submeter o arquivo 'DadosEntrada.json'"
                                          + " construído anteriormente:",
-                                         type=["xlsx"])
-        if uploaded_file is not None:
-            dataframe = pd.read_excel(uploaded_file)
-            st.write(dataframe)
+                                         type=["json"])
+        if uploaded_json is not None:
+            from json import load
+            data_dict = load(uploaded_json)
+            data = data_dict['dados'][0]
+            paramentro = data['Paramêtros']
         else:
-            st.markdown("""❗ Obs.: Evite alterar o arquivo 'DadosEntrada.xlsx'
+            st.markdown("""❗ Obs.: Evite alterar o arquivo 'DadosEntrada.json'
              utilizando o Excel. Se os dados não preencherem automaticamente,
              recomenda-se preencher de forma manual novamente.""")
     else:
@@ -33,20 +36,20 @@ def inicio():
     with col_1:
         st.markdown('Qual(s) parâmetro(s) modelar?')
         col_1_1, col_1_2 = st.columns(2)
-        modelar_od = col_1_1.checkbox('OD', value=True)
+        modelar_od = col_1_1.checkbox('OD', value=paramentro[0])
         if modelar_od:
-                modelar_k_2 = col_1_1.checkbox('k2 tabelado')
+                modelar_k_2 = col_1_1.checkbox('k2 tabelado', value=paramentro[1])
         else:
             modelar_k_2 = False
-        modelar_dbo = col_1_1.checkbox('DBO', value=True)
-        modelar_n = col_1_2.checkbox('Nitrogênio', value=True)
-        modelar_p = col_1_2.checkbox('Fósforo', value=True)
-        modelar_colif = col_1_2.checkbox('Coliformes', value=True)
+        modelar_dbo = col_1_1.checkbox('DBO', value=paramentro[2])
+        modelar_n = col_1_2.checkbox('Nitrogênio', value=paramentro[3])
+        modelar_p = col_1_2.checkbox('Fósforo', value=paramentro[4])
+        modelar_colif = col_1_2.checkbox('Coliformes', value=paramentro[5])
     n_tributarios = col_2.number_input(
         'Quantidade de tributários modeláveis:',
-        min_value=0)
+        min_value=0, value=paramentro[6])
     lista_modelagem = [modelar_od, modelar_k_2, modelar_dbo, modelar_n,
-                       modelar_p, modelar_colif]
+                       modelar_p, modelar_colif, n_tributarios]
 
     lista_tabs = ["tab0"]
     labels = ["Rio principal"]
@@ -55,14 +58,14 @@ def inicio():
         labels.append("Tributário " + str(n_trib + 1))
     lista_tabs = st.tabs(labels)
 
-    return (lista_modelagem, n_tributarios, labels, lista_tabs)
+    return (lista_modelagem, data, labels, lista_tabs)
 
-
-
-############################ DADOS INICIAIS #############################
-def dados_iniciais(lista_modelagem, n_tributarios, labels, lista_tabs):
+##################################################################
+######################### DADOS INICIAIS ##########################
+def dados_iniciais(data, lista_modelagem, n_tributarios, labels, lista_tabs):
     # DADOS DE ENTRADA INICIAIS
     list_valor_i = []
+    list_discretizacao = []
     list_comprimento = []
     list_longitude = []
     list_latitude = []
@@ -89,73 +92,80 @@ def dados_iniciais(lista_modelagem, n_tributarios, labels, lista_tabs):
             "**:orange[DADOS DE ENTRADA INICIAIS]**")
         col_11, col_12 = expander.columns(2)
         col_121, col_122 = col_12.columns(2)
-        with col_11:
-            tipo_entrada = st.radio(str(i) + ". Tipo de entrada dos dados espaciais:",
-                                        ["Intervalo", "Manual","GeoJSON"],
-                                        horizontal=True)
-            df_esp = pd.DataFrame(columns=[str(i) + '. Latitude (UTM)', str(i) + '. Longitude (UTM)',
-                                            str(i) + '. Altitude (m)', str(i) + '. Comprimento (m)'])
-        
-
-        if tipo_entrada == "Intervalo":
-            col0_1, col0_2 = expander.columns(2)
-
-            comp = col0_1.number_input(
-                'Comprimento do ' + str(labels[i]) + ' (m)'
-                + ' *a ser modelado*',
-                min_value=150.0, step=1e-2, format="%.2f")
+        alter_espacial = True
+        if data != False:
+            alter_espacial = col_11.toggle('Alterar variáveis espaciais.')
+        if alter_espacial:
             
-            col1_1, col1_2 = col0_2.columns(2)
-            
-            altit = col1_1.number_input(
-                str(i) + '. Altitude inicial (m)', value=50.0,
-                min_value=1.0, step=1e-2, format="%.2f")
-            
-            incl = col1_2.number_input(
-                str(i) + '. Inclinação (m/m)',
-                min_value=0.0001, step=1e-4, format="%.4f")
-
-
-        if tipo_entrada == "Manual":
-
-            expander.warning('''Adicionar ou a **Latitude e Longitude** ou o **Comprimento**.''',
-                  icon="❕")
-            df_espacial = expander.data_editor(df_esp, num_rows="dynamic")
-            if len(df_espacial[str(i) + '. Latitude (UTM)']) > 0:
-                if df_espacial[str(i) + '. Latitude (UTM)'][0] == None:
-                    comprimento = list(df_espacial.iloc[:,3])
-                else:
-                    latitude = list(df_espacial.iloc[:,0])
-                    longitude = list(df_espacial.iloc[:,1])
-                    preecheu = True
-                altitude = list(df_espacial.iloc[:,2])
-
-    
-        if tipo_entrada == "GeoJSON":
-            df_espacial = expander.file_uploader(str(i) +
-                                                ". ⚠️ Submeter o arquivo .GeoJSON, em WGS 84 UTM," +
-                                                " contendo somente a coluna 'Altitude' em metros.",
-                                                type=["geojson"])
-            
-            if df_espacial is not None:
-                import geopandas as gpd
-                gdf = gpd.read_file(df_espacial)
-                preecheu = True
-                for x in range(len(gdf)):
-                    longitude.append(gdf["geometry"][x].x)
-                    latitude.append(gdf["geometry"][x].y)
-
-                altitude = list(gdf.iloc[:,1])
-
-        expander.divider()
-        col1, col2 = expander.columns(2)
-
-        with col1:
-            st.markdown(":orange[Variáveis iniciais do " + str(labels[i]) + ":]")
-            
-            discret = col1.number_input(
+            discret = col_122.number_input(
                 str(i) + '. Discretização (m)', value=50.0,
                 min_value=0.1, step=1e-2, format="%.2f")
+            
+            tipo_entrada = col_11.radio(str(i) + ". Tipo de entrada dos dados espaciais:",
+                                        ["Intervalo", "Manual","GeoJSON"],
+                                        horizontal=True)
+            col_111, col_112 = col_11.columns(2)
+            df_esp = pd.DataFrame(columns=[str(i) + '. Latitude (UTM)', str(i) + '. Longitude (UTM)',
+                                            str(i) + '. Altitude (m)', str(i) + '. Comprimento (m)'])
+
+            if tipo_entrada == "Intervalo":
+                col0_1, col0_2 = expander.columns(2)
+
+                comp = col0_1.number_input(
+                    'Comprimento do ' + str(labels[i]) + ' (m)'
+                    + ' *a ser modelado*',
+                    min_value=150.0, step=1e-2, format="%.2f")
+                
+                col1_1, col1_2 = col0_2.columns(2)
+                
+                altit = col1_1.number_input(
+                    str(i) + '. Altitude inicial (m)', value=50.0,
+                    min_value=1.0, step=1e-2, format="%.2f")
+                
+                incl = col1_2.number_input(
+                    str(i) + '. Inclinação (m/m)',
+                    min_value=0.0001, step=1e-4, format="%.4f")
+
+
+            if tipo_entrada == "Manual":
+
+                expander.warning('''Adicionar ou a **Latitude e Longitude** ou o **Comprimento**.''',
+                        icon="❕")
+                df_espacial = expander.data_editor(df_esp, num_rows="dynamic")
+                if len(df_espacial[str(i) + '. Latitude (UTM)']) > 0:
+                    if df_espacial[str(i) + '. Latitude (UTM)'][0] == None:
+                        comprimento = list(df_espacial.iloc[:,3])
+                    else:
+                        latitude = list(df_espacial.iloc[:,0])
+                        longitude = list(df_espacial.iloc[:,1])
+                        preecheu = True
+                    altitude = list(df_espacial.iloc[:,2])
+
+
+            if tipo_entrada == "GeoJSON":
+                df_espacial = expander.file_uploader(str(i) +
+                                                    ". ⚠️ Submeter o arquivo .GeoJSON, em WGS 84 UTM," +
+                                                    " contendo somente a coluna 'Altitude' em metros.",
+                                                    type=["geojson"])
+                
+                if df_espacial is not None:
+                    from geopandas import read_file
+                    gdf = read_file(df_espacial)
+                    preecheu = True
+                    for x in range(len(gdf)):
+                        longitude.append(gdf["geometry"][x].x)
+                        latitude.append(gdf["geometry"][x].y)
+
+                    altitude = list(gdf.iloc[:,1])
+
+            expander.divider()
+        col1, col2 = expander.columns(2)
+        alter_var_i = True
+        if data != False:
+            alter_var_i = col1.toggle('Alterar variáveis iniciais de vazão e concentrações.')
+        if alter_var_i:
+            
+            col1.markdown(":orange[Variáveis iniciais do " + str(labels[i]) + ":]")
             
             list_name = ['Vazão (m³/s)']
             list_valores = [0]
@@ -177,15 +187,14 @@ def dados_iniciais(lista_modelagem, n_tributarios, labels, lista_tabs):
                 list_valores.append(0.0)
                 
             df_conc = pd.DataFrame({str(i) + '. Descrição': list_name, 'Valores': list_valores})
-            df_espacial = st.data_editor(df_conc, disabled=[str(i) + '. Descrição'])
+            df_espacial = col1.data_editor(df_conc, disabled=[str(i) + '. Descrição'])
 
-
-        with col2:
+        if alter_espacial:
             if preecheu:
-                on = st.toggle("Visualizar dados espaciais")
-                zona = col_121.number_input(
+                on = col2.toggle("Visualizar dados espaciais")
+                zona = col_111.number_input(
                     str(i) + '. WGS 84 - UTM - Zona:', min_value=0, value=22)
-                hemisferio = col_122.radio(str(i) + '. Hemisfério:', ['Sul', 'Norte'],
+                hemisferio = col_112.radio(str(i) + '. Hemisfério:', ['Sul', 'Norte'],
                                         horizontal=True)
             
                 if on:
@@ -198,48 +207,70 @@ def dados_iniciais(lista_modelagem, n_tributarios, labels, lista_tabs):
 
                     df_plot = pd.DataFrame({'UTMlon': longitude, 'UTMlat': latitude})
                     myProj = Proj('+proj=utm +zone=' + str(zona)
-                                  + ' +' + str(hemisferio) + ' +ellps=WGS84',
-                                  preserve_units=False)
+                                + ' +' + str(hemisferio) + ' +ellps=WGS84',
+                                preserve_units=False)
                     df_plot['lon'], df_plot['lat'] = myProj(df_plot['UTMlon'].values,
                                                             df_plot['UTMlat'].values,
                                                             inverse=True)
-                    st.map(df_plot, size = 1, color='#007FFF')
+                    col2.map(df_plot, size = 1, color='#007FFF')
             else:       
                 if tipo_entrada == "Intervalo":
                     comprimento = list(np.arange(0, comp + discret, discret))
                     for k in range(len(comprimento)):
                         altitude.append((k * incl) + altit) 
         
-        expander.divider()
-        expander.markdown(":orange[Secções transversais do " + str(labels[i]) + ":]")
-        col_3_1, col_3_2 = expander.columns(2)
-        n_pontos = col_3_1.number_input(
-            str(i) + '. Quantidade de pontos que alteram os valores'
-            + ' de uma ou mais variáveis hidráulicas:',
-            min_value=0)
-        df_hid = pd.DataFrame({str(i) + '. Descrição': list_name_hid})
-        for k in range(n_pontos + 1):
-            df_hid['Ponto ' + str(k)] = list_valores_hid
-        df_hid_f = expander.data_editor(df_hid, disabled=[str(i) + '. Descrição'])
-        hidr = []
-        for k in range(n_pontos + 1):
-            hidr.append(list(df_hid_f['Ponto ' + str(k)]))
+        alter_sectr = True
+        if data != False:
+            alter_sectr = expander.toggle('Alterar valores das secções transversais.')
+        if alter_sectr:
+            expander.divider()
+            expander.markdown(":orange[Secções transversais do " + str(labels[i]) + ":]")
+            col_3_1, col_3_2 = expander.columns(2)
+            n_pontos = col_3_1.number_input(
+                str(i) + '. Quantidade de pontos que alteram os valores'
+                + ' de uma ou mais variáveis hidráulicas:',
+                min_value=0)
+            df_hid = pd.DataFrame({str(i) + '. Descrição': list_name_hid})
+            for k in range(n_pontos + 1):
+                df_hid['Ponto ' + str(k)] = list_valores_hid
+            df_hid_f = expander.data_editor(df_hid, disabled=[str(i) + '. Descrição'])
+            hidr = []
+            for k in range(n_pontos + 1):
+                hidr.append(list(df_hid_f['Ponto ' + str(k)]))
 
+        if alter_espacial:
+            list_comprimento.append(comprimento)
+            list_longitude.append(longitude)
+            list_latitude.append(latitude)
+            list_altitude.append(altitude)
+            list_discretizacao.append(discret)
+        else:
+            list_comprimento = data['Dados gerais'][1]
+            list_longitude = data['Dados gerais'][2]
+            list_latitude = data['Dados gerais'][3]
+            list_altitude = data['Dados gerais'][4]
+            list_discretizacao = data['Dados gerais'][6]
+        
+        if alter_var_i:
+            list_valor_i.append(list(df_espacial['Valores']))
+        else:
+            list_valor_i = data['Dados gerais'][0]
+            list_name = data['Nomes']
+            list_valores = data['Valores']
+        
+        if alter_sectr:
+            list_secaotrav.append(hidr)
+        else:
+            list_secaotrav = data['Dados gerais'][5]
 
-        list_comprimento.append(comprimento)
-        list_longitude.append(longitude)
-        list_latitude.append(latitude)
-        list_altitude.append(altitude)
-        list_valor_i.append(list(df_espacial['Valores']))
-        list_secaotrav.append(hidr)
 
     lista_parametros = [list_valor_i, list_comprimento, list_longitude,
-                        list_latitude, list_altitude, list_secaotrav]
+                        list_latitude, list_altitude, list_secaotrav, list_discretizacao]
     return lista_parametros, list_name, list_valores
 
 
-############################ COEFICIENTES #############################
-def coeficientes(lista_modelagem, n_tributarios, labels, lista_tabs):
+########################## COEFICIENTES ###########################
+def coeficientes(data, lista_modelagem, n_tributarios, labels, lista_tabs):
     # COEFICIENTES DDO MODEDELO
 
     list_name = ['Latitude (UTM)',
@@ -248,16 +279,16 @@ def coeficientes(lista_modelagem, n_tributarios, labels, lista_tabs):
                  'Temperatura (°C)']
     list_valores = [None, None, None, 22.0]
     if lista_modelagem[1]:
-        list_name.extend(['k2 (1/d)',
-                            'k2 máximo (1/d)'])
-        list_valores.extend([0.0, 0.0])
+        list_name.append('k2 (1/d)')
+        list_valores.append(0.0)
     if lista_modelagem[0]:
-        list_name.extend(['k1 (1/d)',
-                            'kd (1/d)',
-                            'ks (1/d)',
-                            'lrd (gDBO5/m.d)',
-                            'sd (1/d)'])
-        list_valores.extend([0.0, 0.0, 0.0, 0.0, 0.0])
+        list_name.extend(['k2 máximo (1/d)',
+                          'k1 (1/d)',
+                          'kd (1/d)',
+                          'ks (1/d)',
+                          'lrd (gDBO5/m.d)',
+                          'sd (1/d)'])
+        list_valores.extend([0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
     if lista_modelagem[0] == True and lista_modelagem[3] == True:
         list_name.append('O2namon (mgO2/mgNamon oxid)')
         list_valores.append(0.0)
@@ -368,8 +399,8 @@ def coeficientes(lista_modelagem, n_tributarios, labels, lista_tabs):
     return lista_coeficiente
 
 
-############################ RETIRADAS #############################
-def fun_contrib_retirad(lista_modelagem, n_tributarios, labels, lista_tabs, list_name, list_valores):
+################### RETIRADAS E CONTRIBUIÇÕES #####################
+def fun_contrib_retirad(data, n_tributarios, labels, lista_tabs, list_name, list_valores):
 
     list_name_cr = ['ID (opcional)',
                     'Latitude (UTM)',
@@ -460,7 +491,28 @@ def fun_contrib_retirad(lista_modelagem, n_tributarios, labels, lista_tabs, list
         list_retiradas.append(ret)
         list_ep.append(ep)
         list_ed.append(ed)
-    return 
+    
+    lista_contr_retir = [ret, ep, ed]
+
+    return lista_contr_retir
 
 
+####################### SALVAR ARQUIVO JSON #######################
+def salvararquivo(lista_modelagem, lista_parametros, lista_coeficiente, lista_contr_retir,
+                  list_name, list_valores):
+    col_1, col_2 = st.columns(2)
+    salvar = col_2.toggle('Salvar dados preenchidos.')
+    if salvar:
+        data = {'dados': [{'Paramêtros': lista_modelagem, 'Dados gerais': lista_parametros,
+                'Coeficientes': lista_coeficiente, 'Contr e Retir': lista_contr_retir,
+                'Nomes': list_name, 'Valores': list_valores}]}
+        from json import dumps
+        json_string = dumps(data)
 
+        col_1.download_button(
+            label="Clique para fazer o Download",
+            file_name="DadosEntrada.json",
+            mime="application/json",
+            data=json_string,
+        )
+    return
