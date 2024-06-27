@@ -5,4 +5,4 @@ matplotlib
 streamlit-option-menu
 pyproj
 geopandas
-plotly.graph_objects
+plotly
