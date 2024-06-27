@@ -374,15 +374,7 @@ def resultados(n_tributarios, list_tranfor, ponto_af, lista_modelagem):
     return lidt_df, list_entr 
 
 
-def plot_map(df_new, colun, title, inverse_b):
-    maps = go.Figure()
-
-    maps.update_layout(title_text=title, title_font_color="teal",
-                            mapbox=dict(style='carto-positron',
-                                        center=dict(lat=df_new["lat"].mean(),
-                                                    lon=df_new["lon"].mean()),
-                                                    zoom=10),
-                            )
+def plot_map(maps, df_new, colun, title, inverse_b):
     
     maps.add_trace(
         go.Scattermapbox(lon=df_new['lon'], lat=df_new['lat'], name=title,
@@ -392,7 +384,6 @@ def plot_map(df_new, colun, title, inverse_b):
                                 "colorbar": dict(orientation='h')},
                         marker_reversescale=inverse_b))
     
-    st.plotly_chart(maps, use_container_width=True)
     return
 
 
@@ -580,28 +571,39 @@ def plotar(n_tributarios, lista_modelagem, lidt_df, list_entr, labels, zona, hem
             df_new['lon'], df_new['lat'] = myProj(df_new['longitude'].values,
                                                   df_new['latitude'].values,
                                                   inverse=True)
-
-            col1, col2 = st.columns(2)
-
-            with col1:
-                if lista_modelagem[0]:
-                    plot_map(df_new, df_new["conc_od"], 'OD (mg/L)', False)
-                        
-                if lista_modelagem[2]:
-                    plot_map(df_new, df_new["conc_dbo"], 'DBO (mg/L)', True)
-                if lista_modelagem[3]:
-                    plot_map(df_new, df_new["conc_p_org"], 'P-org (mg/L)', True)
-                    plot_map(df_new, df_new["conc_p_inorg"], 'P-inorg (mg/L)', True)
-                    plot_map(df_new, df_new["conc_p_total"], 'P total (mg/L)', True)
             
-            with col2:
-                if lista_modelagem[2]:
-                    plot_map(df_new, df_new["conc_no"], 'N-org (mg/L)', True)
-                    plot_map(df_new, df_new["conc_n_amon"], 'N-amon (mg/L)', True)
-                    plot_map(df_new, df_new["conc_nitrato"], 'N-nitri (mg/L)', True)
-                    plot_map(df_new, df_new["conc_nitrito"], 'N-nitra (mg/L)', True)
-                if lista_modelagem[4]:
-                    plot_map(df_new, df_new["conc_e_coli"], 'E-coli (NMP/100ml)', True)
+            
+            maps = go.Figure()
+
+            maps.update_layout(title_text='Concentrações', title_font_color="teal",
+                                    mapbox=dict(style='carto-positron',
+                                                center=dict(lat=df_new["lat"].mean(),
+                                                            lon=df_new["lon"].mean()),
+                                                            zoom=10),
+                                    legend_itemclick="toggleothers",
+                                    margin={"r":0,"t":0,"l":0,"b":0})
+
+
+
+            if lista_modelagem[0]:
+                plot_map(maps, df_new, df_new["conc_od"], 'OD (mg/L)', False)
+                    
+            if lista_modelagem[2]:
+                plot_map(maps, df_new, df_new["conc_dbo"], 'DBO (mg/L)', True)
+            if lista_modelagem[3]:
+                plot_map(maps, df_new, df_new["conc_p_org"], 'P-org (mg/L)', True)
+                plot_map(maps, df_new, df_new["conc_p_inorg"], 'P-inorg (mg/L)', True)
+                plot_map(maps, df_new, df_new["conc_p_total"], 'P total (mg/L)', True)
+        
+
+            if lista_modelagem[2]:
+                plot_map(maps, df_new, df_new["conc_no"], 'N-org (mg/L)', True)
+                plot_map(maps, df_new, df_new["conc_n_amon"], 'N-amon (mg/L)', True)
+                plot_map(maps, df_new, df_new["conc_nitrato"], 'N-nitri (mg/L)', True)
+                plot_map(maps, df_new, df_new["conc_nitrito"], 'N-nitra (mg/L)', True)
+            if lista_modelagem[4]:
+                plot_map(maps, df_new, df_new["conc_e_coli"], 'E-coli (NMP/100ml)', True)
+            st.plotly_chart(maps, use_container_width=True)
     
     return
 
