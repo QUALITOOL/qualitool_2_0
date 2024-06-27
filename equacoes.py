@@ -1,566 +1,549 @@
 import numpy as np
+import pandas as pd
+import scipy.optimize as opt
+import copy
+import streamlit as st
+
+##########################################################################################################
+# OBJETOS
+# Hidráulica
+class Hidraulica:
+    def __init__(self, lat, long, comp, vazao, rug, l_rio, altitude, inclinacao, ang_esq,
+                 ang_dir, prof, veloc, to, nivel_ag, froude):
+        self.latitude = lat
+        self.longitude = long
+        self.comprimento = comp
+        self.vazao = vazao
+        self.rugosidade_n = rug
+        self.largura_rio = l_rio
+        self.altitude = altitude
+        self.inclinacao = inclinacao
+        self.ang_esquerdo = ang_esq
+        self.ang_direito = ang_dir
+        self.profundidade = prof
+        self.velocidade = veloc
+        self.tensao_c = to
+        self.nivel_dagua = nivel_ag
+        self.froude = froude
 
 
-def velocidade_manning(vazao):
-    sol = 0.897498340970115
-    velocidade = 0.919221754892882
-
-    return velocidade, sol
-
-
-def velocidade(vazao):
-    largura = 4
-    inclinacao = 0.001
-    manning = 0.025
-
-    area = (largura * 0.897498340970115)
-    velocidade = vazao / area
-    return velocidade, 0.897498340970115
+# Entradas Pontuais
+class EntradaPontual:
+    def __init__(self, lat, long, comp, c_gerais, vazao, descricao, rio):
+        self.latitude = lat
+        self.longitude = long
+        self.comprimento = comp
+        self.concentracoes = c_gerais
+        self.descricao = descricao
+        self.vazao = vazao
+        self.rio = rio
 
 
-def mistura(concentracao1, vazao1, concentracao2, vazao2):
-    mistura = ((concentracao1 * vazao1) + (concentracao2 * vazao2)) / (
-        vazao1 + vazao2)
-    return mistura
+# Coeficientes               
+class Coeficientes:
+    def __init__(self, temperatura, k_2_calculavel, k_2_max, k_2, k_1, s_d, k_d, k_s, l_rd, k_so,
+                 k_oa, k_an, k_nn, s_amon, k_spo, k_oi, k_b, r_o2_amon, k_nit_od, s_pinorg):
+        self.temperatura = temperatura
+        self.k_2_calculavel = k_2_calculavel
+        self.k_2_max = k_2_max
+        self.k_2 = k_2
+        self.k_1 = k_1
+        self.s_d = s_d
+        self.k_d = k_d
+        self.k_s = k_s
+        self.l_rd = l_rd
+        self.k_so = k_so
+        self.k_oa = k_oa
+        self.k_an = k_an
+        self.k_nn = k_nn
+        self.s_amon = s_amon
+        self.k_spo = k_spo
+        self.k_oi = k_oi
+        self.k_b = k_b
+        self.r_o2_amon = r_o2_amon
+        self.k_nit_od = k_nit_od
+        self.s_pinorg = s_pinorg
 
 
-def k2_eq(list_m, list_n, list_k2_max, list_temperatura, index, vazao):
-    k2_20 = list_m[index] * vazao ** (-list_n[index])
-    if k2_20 > list_k2_max[index]:
-        k2_20 = list_k2_max[index]
-    k2 = k2_20 * 1.024 ** (list_temperatura[index] - 20)
-    return k2
+# Concentrações
+class Concentracoes:
+    def __init__(self, od, dbo, no, n_amon, nitrato, nitrito, p_org, p_inorg, p_total, e_coli):
+        self.conc_od = od
+        self.conc_dbo = dbo
+        self.conc_no = no
+        self.conc_n_amon = n_amon
+        self.conc_nitrato = nitrato
+        self.conc_nitrito = nitrito
+        self.conc_p_org = p_org
+        self.conc_p_inorg = p_inorg
+        self.conc_p_total = p_total
+        self.conc_e_coli = e_coli
 
 
-def equacoes(lista_parametros, lista_coeficientes, lista_despejos,
-             lista_retirada, delta, index):
+# Resultados finais
+class Quanti_Qualitativo:
+    def __init__(self, hidraulica, concentracoes, coeficientes, rio):
+        self.hidraulica = hidraulica
+        self.concentracoes = concentracoes
+        self.coeficientes = coeficientes
+        self.rio = rio
 
-    list_qr = lista_parametros[0]
-    list_od = lista_parametros[1]
-    list_dbo5 = lista_parametros[2]
-    list_temperatura = lista_parametros[3]
-    list_altitude = lista_parametros[4]
-    list_colif = lista_parametros[5]
-    list_norgr = lista_parametros[6]
-    list_namonr = lista_parametros[7]
-    list_nnitritor = lista_parametros[8]
-    list_nnitrator = lista_parametros[9]
-    list_porgr = lista_parametros[10]
-    list_pinorgr = lista_parametros[11]
-    list_dist_trib = lista_parametros[12]
-    list_comp = lista_parametros[13]
 
-    list_kso = lista_coeficientes[0]
-    kso = list_kso[index] * 1.024 ** (list_temperatura[index] - 20)
-    list_koa = lista_coeficientes[1]
-    koa = list_koa[index] * 1.047 ** (list_temperatura[index] - 20)
-    list_kan = lista_coeficientes[2]
-    kan = list_kan[index] * 1.080 ** (list_temperatura[index] - 20)
-    list_knn = lista_coeficientes[3]
-    knn = list_knn[index] * 1.047 ** (list_temperatura[index] - 20)
-    list_o2namon = lista_coeficientes[4]
-    list_o2nnitri = lista_coeficientes[5]
-    list_knitr = lista_coeficientes[6]
-    list_m = lista_coeficientes[7]
-    list_n = lista_coeficientes[8]
-    list_k2_max = lista_coeficientes[9]
-    list_kspo = lista_coeficientes[10]
-    kspo = list_kspo[index] * 1.024 ** (list_temperatura[index] - 20)
-    list_koi = lista_coeficientes[11]
-    koi = list_koi[index] * 1.047 ** (list_temperatura[index] - 20)
-    list_kb = lista_coeficientes[12]
-    kb = list_kb[index] * 1.07 ** (list_temperatura[index] - 20)
-    list_snamon = lista_coeficientes[13]
-    snamon = list_snamon[index] * 1.074 ** (list_temperatura[index] - 20)
-    list_k1 = lista_coeficientes[14]
-    k1 = list_k1[index] * 1.047 ** (list_temperatura[index] - 20)
-    kt = 1 / (np.exp(-5 * k1))
-    list_kd = lista_coeficientes[15]
-    kd = list_kd[index] * 1.047 ** (list_temperatura[index] - 20)
-    list_ks = lista_coeficientes[16]
-    ks = list_ks[index] * 1.024 ** (list_temperatura[index] - 20)
-    list_spinorg = lista_coeficientes[17]
-    spinorg = list_spinorg[index] * 1.074 ** (list_temperatura[index] - 20)
-    list_fotossintese = lista_coeficientes[18]
-    taxa_fotossintese = list_fotossintese[index] * (
-        1.047 ** (list_temperatura[index] - 20))
-    list_respiracao = lista_coeficientes[19]
-    taxa_respiracao = list_respiracao[index] * (
-        1.047 ** (list_temperatura[index] - 20))
-    list_sedimento = lista_coeficientes[20]
-    taxa_sedimento = list_sedimento[index] * (
-        1.06 ** (list_temperatura[index] - 20))
-    list_lrd = lista_coeficientes[21]
 
-    retirada = lista_retirada[2]
-    despejo = lista_despejos[11]
+#########################################################################
+def fun_hipotenusa(x1, x2, y1, y2):
+    hipotenusa = np.sqrt((x2-x1)**2 + (y2 -y1)**2)
+    return hipotenusa
 
-    lista_delta = np.arange(0, list_comp[index], delta)
-    vazao = list_qr[index]
-    vaz_ant = vazao
-    velocidade, profundidade = velocidade_manning(vazao)
-    od = list_od[index]
-    dbo5 = list_dbo5[index]
-    od_saturacao = (1 - (list_altitude[index]/9450)) * (
-        14.652 - (4.1022 * (10 ** -list_temperatura[index]))
-        + (7.991 * 10 ** (-3) * (list_temperatura[index] ** 2))
-        - (7.7774 * 10 ** (-5) * (list_temperatura[index] ** 3)))
-    colif = list_colif[index]
-    norgr = list_norgr[index]
-    namonr = list_namonr[index]
-    nnitritor = list_nnitritor[index]
-    nnitrator = list_nnitrator[index]
-    porgr = list_porgr[index]
-    pinorgr = list_pinorgr[index]
-    list_qr_final = []
-    list_od_final = []
-    list_dbo5_final = []
-    list_colif_final = []
-    list_norgr_final = []
-    list_namonr_final = []
-    list_nnitritor_final = []
-    list_nnitrator_final = []
-    list_porgr_final = []
-    list_pinorgr_final = []
-    list_n_total_final = []
-    list_p_total_final = []
-    for comp in lista_delta:
-        if vaz_ant != vazao:
-            velocidade, profundidade = velocidade_manning(vazao)
-            vaz_ant = vazao
-        tempo_delta = (delta * 1000) / (velocidade * 86400)
 
-        if index == 0:
-            if comp in list_dist_trib:
-                index2 = list_dist_trib.index(comp)
-                parametros, list_nula = equacoes(
-                    lista_parametros, lista_coeficientes,
-                    lista_despejos, lista_retirada,
-                    delta, index2)
-                vazao_trib = parametros[0]
-                od_trib = parametros[1]
-                dbo5_trib = parametros[2]
-                colif_trib = parametros[3]
-                norgr_trib = parametros[4]
-                namonr_trib = parametros[5]
-                nnitritor_trib = parametros[6]
-                nnitrator_trib = parametros[7]
-                porgr_trib = parametros[8]
-                pinorgr_trib = parametros[9]
+def fun_discr(posterior, anterior, x, parametro_posterior, parametro_anterior):
+    if posterior - anterior == 0:
+        razao = 1
+    else:
+        razao = (x - anterior)/(posterior - anterior)
+    discret = parametro_anterior + ((parametro_posterior - parametro_anterior) * razao)
+    return discret
 
-                od = mistura(od_trib, vazao_trib, od, vazao)
-                dbo5 = mistura(dbo5_trib, vazao_trib, dbo5, vazao)
-                colif = mistura(colif_trib, vazao_trib, colif, vazao)
-                norgr = mistura(norgr_trib, vazao_trib, norgr, vazao)
-                namonr = mistura(namonr_trib, vazao_trib, namonr, vazao)
-                nnitritor = mistura(nnitritor_trib, vazao_trib,
-                                    nnitritor, vazao)
-                nnitrator = mistura(nnitrator_trib, vazao_trib,
-                                    nnitrator, vazao)
-                porgr = mistura(porgr_trib, vazao_trib, porgr, vazao)
-                pinorgr = mistura(pinorgr_trib, vazao_trib, pinorgr, vazao)
 
-                vazao += vazao_trib
+def lista_hidr(longitude, latitude, altitude, comprimento, discretizacao):
+    lista_dist_real = []
+    lista_acum = [0]
+    acumulado = 0
 
-        if retirada[index]:
-            lista_dist_retiradas = lista_retirada[0]
-            dist_retiradas = lista_dist_retiradas[index]
-            lista_q_retiradas = lista_retirada[1]
-            q_retiradas = lista_q_retiradas[index]
+    if longitude[0] != None:
+        for i in range(len(longitude)-1):
+            hipotenusa = fun_hipotenusa(longitude[i], longitude[i+1], latitude[i], latitude[i+1])
+            acumulado += hipotenusa
+            lista_acum.append(acumulado)
+            lista_dist_real.append(hipotenusa)
 
-            if comp in dist_retiradas:
-                index3 = dist_retiradas.index(comp)
-                vazao = vazao - q_retiradas[index3]
+        m_trecho = lista_acum[-1]
+        intervalos = list(np.arange(0, (m_trecho + discretizacao), discretizacao))
 
-        if despejo[index]:
-            lista_dist_despejos = lista_despejos[0]
-            dist_despejos = lista_dist_despejos[index]
-            lista_q_despejos = lista_despejos[1]
-            q_despejos = lista_q_despejos[index]
-            lista_od_despejos = lista_despejos[2]
-            od_despejos = lista_od_despejos[index]
-            list_dbo5_desp = lista_despejos[3]
-            dbo5_desp = list_dbo5_desp[index]
-            list_norgr_desp = lista_despejos[4]
-            norgr_desp = list_norgr_desp[index]
-            list_namonr_desp = lista_despejos[5]
-            namonr_desp = list_namonr_desp[index]
-            list_enitritor_desp = lista_despejos[6]
-            enitritor_desp = list_enitritor_desp[index]
-            list_nnitrator_desp = lista_despejos[7]
-            nnitrator_desp = list_nnitrator_desp[index]
-            list_porgr_desp = lista_despejos[8]
-            porgr_desp = list_porgr_desp[index]
-            list_pinorgr_desp = lista_despejos[9]
-            pinorgr_desp = list_pinorgr_desp[index]
-            list_colif_desp = lista_despejos[10]
-            colif_desp = list_colif_desp[index]
+        lista_hidraulica= []
 
-            if comp in dist_despejos:
-                index4 = dist_despejos.index(comp)
-                od = mistura(od_despejos[index4], q_despejos[index4],
-                             od, vazao)
-                dbo5 = mistura(dbo5_desp[index4], q_despejos[index4],
-                               dbo5, vazao)
-                colif = mistura(colif_desp[index4], q_despejos[index4],
-                                colif, vazao)
-                norgr = mistura(norgr_desp[index4], q_despejos[index4],
-                                norgr, vazao)
-                namonr = mistura(namonr_desp[index4], q_despejos[index4],
-                                 namonr, vazao)
-                nnitritor = mistura(enitritor_desp[index4],
-                                    q_despejos[index4], nnitritor, vazao)
-                nnitrator = mistura(nnitrator_desp[index4],
-                                    q_despejos[index4], nnitrator, vazao)
-                porgr = mistura(porgr_desp[index4], q_despejos[index4],
-                                porgr, vazao)
-                pinorgr = mistura(pinorgr_desp[index4],
-                                  q_despejos[index4], pinorgr, vazao)
+        for i in range(len(intervalos)):
+            for j in range(len(lista_acum) - 1):
+                if lista_acum[j] <= intervalos[i] <= lista_acum[j + 1]:
+                    long = fun_discr(lista_acum[j + 1], lista_acum[j], intervalos[i],
+                                    longitude[j + 1], longitude[j])
+                    lat = fun_discr(lista_acum[j + 1], lista_acum[j], intervalos[i],
+                                    latitude[j + 1], latitude[j])
+                    alt = fun_discr(lista_acum[j + 1], lista_acum[j], intervalos[i],
+                                    altitude[j + 1], altitude[j])
 
-                vazao += q_despejos[index4]
+            hidraulica = Hidraulica(lat, long, intervalos[i], None, None, None, alt,
+                                    None, None, None, None, None, None, None, None)
+            lista_hidraulica.append(copy.deepcopy(hidraulica))
+    else:
+        intervalos = list(np.arange(0, (comprimento[-1] + discretizacao), discretizacao))
 
-        # DBO5
-        dbo5 += (- ((kd + ks) * dbo5 * tempo_delta)
-                 + ((list_lrd[index] / (profundidade * 4)) * tempo_delta))
+        lista_hidraulica= []
 
-        # NITROGÊNIO
-        if od <= 0:
-            fnitr = 0.00001
+        for i in range(len(intervalos)):
+            for j in range(len(comprimento) - 1):
+                if comprimento[j] <= intervalos[i] <= comprimento[j + 1]:
+                    alt = fun_discr(comprimento[j + 1], comprimento[j], intervalos[i],
+                                    altitude[j + 1], altitude[j])
+
+            hidraulica = Hidraulica(None, None, intervalos[i], None, None, None, alt,
+                                    None, None, None, None, None, None, None, None)
+            lista_hidraulica.append(copy.deepcopy(hidraulica))
+
+    # ERRO!!!!!!!!!!!!!!- Inclinação
+    for i in range(len(lista_hidraulica)):
+        if i != (len(lista_hidraulica) - 1):
+            incl = (lista_hidraulica[i].altitude
+                    - lista_hidraulica[i+1].altitude)/ discretizacao
+            if incl <= 0:
+                if i == 0:
+                    incl = 0.0001
+                else:
+                    incl = lista_hidraulica[i - 1].inclinacao
+        lista_hidraulica[i].inclinacao = np.abs(incl)
+    
+    return lista_hidraulica
+
+
+def func_hidraulica(lista_hidraulica, lista_s_pontual, lista_e_pontual, lista_e_difusa, lista_s_transversal, discretizacao):
+
+    vazao_atual = 0
+    lista_final = []
+    a_esq = lista_s_transversal[0].ang_esquerdo
+    a_dir = lista_s_transversal[0].ang_direito
+    l_rio = lista_s_transversal[0].largura_rio
+    rug = lista_s_transversal[0].rugosidade_n
+    
+    for i in range(len(lista_hidraulica)):
+
+        # ENTRADAS E SAÍDAS
+        for j in range(len(lista_e_pontual)):
+            if lista_hidraulica[i].comprimento == lista_e_pontual[j].comprimento:
+                vazao_atual += lista_e_pontual[j].vazao
+        if len(lista_s_pontual) > 0:
+            for k in range(len(lista_s_pontual)):
+                if lista_hidraulica[i].comprimento == lista_s_pontual[k].comprimento:
+                    vazao_atual -= lista_s_pontual[k].vazao
+        if len(lista_e_difusa) > 0:
+            for n in range(len(lista_e_difusa)):
+                if lista_e_difusa[n].comprimento_inicial <= lista_hidraulica[i].comprimento < lista_e_difusa[n].comprimento_final:
+                    fator_divisor = (lista_e_difusa[n].comprimento_final - lista_e_difusa[n].comprimento_inicial) / discretizacao
+                    vazao_atual += (lista_e_difusa[n].vazao / fator_divisor)
+
+
+        # SECÇÃO TRANSVERSAL
+        for m in range(len(lista_s_transversal) - 1):
+            if lista_s_transversal[m].comprimento <= lista_hidraulica[i].comprimento <= lista_s_transversal[m + 1].comprimento:
+                a_esq = fun_discr(lista_s_transversal[m + 1].comprimento, lista_s_transversal[m].comprimento,
+                                lista_hidraulica[i].comprimento, lista_s_transversal[m + 1].ang_esquerdo,
+                                lista_s_transversal[m].ang_esquerdo)
+                a_dir = fun_discr(lista_s_transversal[m + 1].comprimento, lista_s_transversal[m].comprimento,
+                                lista_hidraulica[i].comprimento, lista_s_transversal[m + 1].ang_direito,
+                                lista_s_transversal[m].ang_direito)
+                l_rio =  fun_discr(lista_s_transversal[m + 1].comprimento, lista_s_transversal[m].comprimento,
+                                lista_hidraulica[i].comprimento, lista_s_transversal[m + 1].largura_rio,
+                                lista_s_transversal[m].largura_rio)
+                rug =  fun_discr(lista_s_transversal[m + 1].comprimento, lista_s_transversal[m].comprimento,
+                                lista_hidraulica[i].comprimento, lista_s_transversal[m + 1].rugosidade_n,
+                                lista_s_transversal[m].rugosidade_n)
+        
+        for _ in range(len(lista_s_transversal)):
+            funcao_1 = (vazao_atual * rug) / np.sqrt(lista_hidraulica[i].inclinacao)
+            funcao_2 = lambda y : (((((2 * l_rio + (y / np.tan(a_esq * np.pi / 180)) + (y / np.tan(a_dir * np.pi / 180))) * (y / 2)) ** (5/3)) / (
+                ((y / np.sin(a_esq * np.pi / 180)) + (y / np.sin(a_dir * np.pi / 180)) + l_rio) ** (2/3))) - funcao_1)
+            prof = opt.bisect(funcao_2, 0,500)
+            nivel_dagua = lista_hidraulica[i].altitude + prof
+            area = ((2 * l_rio + (prof / np.tan(a_esq * np.pi / 180)) + (prof / np.tan(a_dir * np.pi / 180))) * (prof / 2))
+            veloc = vazao_atual / area
+            tensao_c = 9810 * lista_hidraulica[i].inclinacao * (area / (
+                (prof / np.sin(a_esq * np.pi / 180)) + (prof / np.sin(a_dir * np.pi / 180)) + l_rio))
+            froude = veloc / (np.sqrt(9.81 * prof))
+
+        lista_hidraulica[i].vazao = vazao_atual
+        lista_hidraulica[i].ang_esquerdo = a_esq
+        lista_hidraulica[i].ang_direito = a_dir
+        lista_hidraulica[i].rugosidade_n = rug
+        lista_hidraulica[i].largura_rio = l_rio
+        lista_hidraulica[i].profundidade = prof
+        lista_hidraulica[i].nivel_dagua = nivel_dagua
+        lista_hidraulica[i].velocidade = veloc
+        lista_hidraulica[i].tensao_c = tensao_c
+        lista_hidraulica[i].froude = froude
+
+        final = Quanti_Qualitativo(lista_hidraulica[i], None, None, None)
+        lista_final.append(copy.deepcopy(final))
+    
+    return lista_final
+
+
+def k2(hidraulica):
+
+    if 0.1 <= hidraulica.profundidade < 4 and 0.05 <= hidraulica.velocidade < 1.6:
+        if 0.6 <= hidraulica.profundidade < 4 and 0.05 <= hidraulica.velocidade < 0.8:
+            k_2 = 3.73 * (hidraulica.velocidade ** 0.5) * (hidraulica.profundidade ** -1.5)
+        elif 0.6 <= hidraulica.profundidade < 4 and 0.8 <= hidraulica.velocidade < 1.6:
+            k_2 = 5 * (hidraulica.velocidade ** 0.97) * (hidraulica.profundidade ** -1.67)
         else:
-            fnitr = 1 - np.exp(1) ** (-list_knitr[index] * od)
-
-        norgr += - (norgr * (kso + koa) * tempo_delta)
-
-        namonr += ((koa * norgr) - (kan * fnitr * snamon)
-                   + (snamon / profundidade)) * tempo_delta
-
-        nnitritor += ((kan * fnitr * namonr)
-                      - (knn * fnitr * nnitritor)) * tempo_delta
-
-        nnitrator += (knn * fnitr * nnitritor * tempo_delta)
-
-        n_total = norgr + namonr + nnitritor + nnitrator
-
-        # OD
-        k2 = k2_eq(list_m, list_n, list_k2_max, list_temperatura, index, vazao)
-
-        reaeracao = k2 * (od_saturacao - od) * tempo_delta
-
-        decomposicao = -(kd * dbo5 * kt * tempo_delta)
-
-        oxid_amonia = -(list_o2namon[index] * namonr
-                        * kan * fnitr * tempo_delta)
-
-        oxid_nitrito = -(list_o2nnitri[index] * nnitritor
-                         * knn * fnitr * tempo_delta)
-
-        fotossintese = (taxa_fotossintese / profundidade) * tempo_delta
-
-        respiracao = -(taxa_respiracao / profundidade) * tempo_delta
-
-        sedimento = -(taxa_sedimento / profundidade) * tempo_delta
-
-        od = (reaeracao + decomposicao + oxid_amonia + oxid_nitrito
-              + fotossintese + respiracao + sedimento)
-
-        if od < 0:
-            od = 0
-
-        # FÓSFORO
-        porgr += -(porgr * (kspo + koi) * tempo_delta)
-
-        pinorgr += ((koi * porgr) + (spinorg / profundidade)) * tempo_delta
-
-        p_total = porgr + pinorgr
-
-        # COLIFORMES
-        colif += -(colif * kb * tempo_delta)
-
-        if index == 0:
-            list_qr_final.append(vazao)
-            list_od_final.append(od)
-            list_dbo5_final.append(dbo5)
-            list_colif_final.append(colif)
-            list_norgr_final.append(norgr)
-            list_namonr_final.append(namonr)
-            list_nnitritor_final.append(nnitritor)
-            list_nnitrator_final.append(nnitrator)
-            list_porgr_final.append(porgr)
-            list_pinorgr_final.append(pinorgr)
-            list_n_total_final.append(n_total)
-            list_p_total_final.append(p_total)
-
-    list_parametros_finais = [vazao, od, dbo5, colif, norgr, namonr, nnitritor,
-                              nnitrator, porgr, pinorgr]
-
-    list_final = [lista_delta, list_qr_final, list_od_final, list_dbo5_final,
-                  list_colif_final, list_norgr_final, list_namonr_final,
-                  list_nnitritor_final, list_nnitrator_final,
-                  list_porgr_final, list_pinorgr_final,
-                  list_n_total_final, list_p_total_final]
-    return list_parametros_finais, list_final
-
-
-def equacoes_calibragem(
-        lista_parametros, lista_coeficientes, lista_despejos,
-        lista_retirada, delta, index, k2):
-
-    list_qr = lista_parametros[0]
-    list_od = lista_parametros[1]
-    list_dbo5 = lista_parametros[2]
-    list_temperatura = lista_parametros[3]
-    list_altitude = lista_parametros[4]
-    list_colif = lista_parametros[5]
-    list_norgr = lista_parametros[6]
-    list_namonr = lista_parametros[7]
-    list_nnitritor = lista_parametros[8]
-    list_nnitrator = lista_parametros[9]
-    list_porgr = lista_parametros[10]
-    list_pinorgr = lista_parametros[11]
-    list_dist_trib = lista_parametros[12]
-    list_comp = lista_parametros[13]
-
-    list_kso = lista_coeficientes[0]
-    kso = list_kso[index] * 1.024 ** (list_temperatura[index] - 20)
-    list_koa = lista_coeficientes[1]
-    koa = list_koa[index] * 1.047 ** (list_temperatura[index] - 20)
-    list_kan = lista_coeficientes[2]
-    kan = list_kan[index] * 1.080 ** (list_temperatura[index] - 20)
-    list_knn = lista_coeficientes[3]
-    knn = list_knn[index] * 1.047 ** (list_temperatura[index] - 20)
-    list_o2namon = lista_coeficientes[4]
-    list_o2nnitri = lista_coeficientes[5]
-    list_knitr = lista_coeficientes[6]
-    list_kspo = lista_coeficientes[10]
-    kspo = list_kspo[index] * 1.024 ** (list_temperatura[index] - 20)
-    list_koi = lista_coeficientes[11]
-    koi = list_koi[index] * 1.047 ** (list_temperatura[index] - 20)
-    list_kb = lista_coeficientes[12]
-    kb = list_kb[index] * 1.07 ** (list_temperatura[index] - 20)
-    list_snamon = lista_coeficientes[13]
-    snamon = list_snamon[index] * 1.074 ** (list_temperatura[index] - 20)
-    list_k1 = lista_coeficientes[14]
-    k1 = list_k1[index] * 1.047 ** (list_temperatura[index] - 20)
-    kt = 1 / (np.exp(-5 * k1))
-    list_kd = lista_coeficientes[15]
-    kd = list_kd[index] * 1.047 ** (list_temperatura[index] - 20)
-    list_ks = lista_coeficientes[16]
-    ks = list_ks[index] * 1.024 ** (list_temperatura[index] - 20)
-    list_spinorg = lista_coeficientes[17]
-    spinorg = list_spinorg[index] * 1.074 ** (list_temperatura[index] - 20)
-    list_fotossintese = lista_coeficientes[18]
-    taxa_fotossintese = list_fotossintese[index] * (
-        1.047 ** (list_temperatura[index] - 20))
-    list_respiracao = lista_coeficientes[19]
-    taxa_respiracao = list_respiracao[index] * (
-        1.047 ** (list_temperatura[index] - 20))
-    list_sedimento = lista_coeficientes[20]
-    taxa_sedimento = list_sedimento[index] * (
-        1.06 ** (list_temperatura[index] - 20))
-    list_lrd = lista_coeficientes[21]
-
-    retirada = lista_retirada[2]
-    despejo = lista_despejos[11]
-
-    lista_delta = np.arange(0, list_comp[index], delta)
-    vazao = list_qr[index]
-    vaz_ant = vazao
-    velocidade, profundidade = velocidade_manning(vazao)
-    od = list_od[index]
-    dbo5 = list_dbo5[index]
-    od_saturacao = (1 - (list_altitude[index]/9450)) * (
-        14.652 - (4.1022 * (10 ** -list_temperatura[index]))
-        + (7.991 * 10 ** (-3) * (list_temperatura[index] ** 2))
-        - (7.7774 * 10 ** (-5) * (list_temperatura[index] ** 3)))
-    colif = list_colif[index]
-    norgr = list_norgr[index]
-    namonr = list_namonr[index]
-    nnitritor = list_nnitritor[index]
-    nnitrator = list_nnitrator[index]
-    porgr = list_porgr[index]
-    pinorgr = list_pinorgr[index]
-    list_qr_final = []
-    list_od_final = []
-    list_dbo5_final = []
-    list_colif_final = []
-    list_norgr_final = []
-    list_namonr_final = []
-    list_nnitritor_final = []
-    list_nnitrator_final = []
-    list_porgr_final = []
-    list_pinorgr_final = []
-    list_n_total_final = []
-    list_p_total_final = []
-    for comp in lista_delta:
-        if vaz_ant != vazao:
-            velocidade, profundidade = velocidade_manning(vazao)
-            vaz_ant = vazao
-        tempo_delta = (delta * 1000) / (velocidade * 86400)
-
-        if index == 0:
-            if comp in list_dist_trib:
-                index2 = list_dist_trib.index(comp)
-                parametros, list_nula = equacoes(
-                    lista_parametros, lista_coeficientes,
-                    lista_despejos, lista_retirada,
-                    delta, index2)
-                vazao_trib = parametros[0]
-                od_trib = parametros[1]
-                dbo5_trib = parametros[2]
-                colif_trib = parametros[3]
-                norgr_trib = parametros[4]
-                namonr_trib = parametros[5]
-                nnitritor_trib = parametros[6]
-                nnitrator_trib = parametros[7]
-                porgr_trib = parametros[8]
-                pinorgr_trib = parametros[9]
-
-                od = mistura(od_trib, vazao_trib, od, vazao)
-                dbo5 = mistura(dbo5_trib, vazao_trib, dbo5, vazao)
-                colif = mistura(colif_trib, vazao_trib, colif, vazao)
-                norgr = mistura(norgr_trib, vazao_trib, norgr, vazao)
-                namonr = mistura(namonr_trib, vazao_trib, namonr, vazao)
-                nnitritor = mistura(nnitritor_trib, vazao_trib,
-                                    nnitritor, vazao)
-                nnitrator = mistura(nnitrator_trib, vazao_trib,
-                                    nnitrator, vazao)
-                porgr = mistura(porgr_trib, vazao_trib, porgr, vazao)
-                pinorgr = mistura(pinorgr_trib, vazao_trib, pinorgr, vazao)
-
-                vazao += vazao_trib
-
-        if retirada[index]:
-            lista_dist_retiradas = lista_retirada[0]
-            dist_retiradas = lista_dist_retiradas[index]
-            lista_q_retiradas = lista_retirada[1]
-            q_retiradas = lista_q_retiradas[index]
-
-            if comp in dist_retiradas:
-                index3 = dist_retiradas.index(comp)
-                vazao = vazao - q_retiradas[index3]
-
-        if despejo[index]:
-            lista_dist_despejos = lista_despejos[0]
-            dist_despejos = lista_dist_despejos[index]
-            lista_q_despejos = lista_despejos[1]
-            q_despejos = lista_q_despejos[index]
-            lista_od_despejos = lista_despejos[2]
-            od_despejos = lista_od_despejos[index]
-            list_dbo5_desp = lista_despejos[3]
-            dbo5_desp = list_dbo5_desp[index]
-            list_norgr_desp = lista_despejos[4]
-            norgr_desp = list_norgr_desp[index]
-            list_namonr_desp = lista_despejos[5]
-            namonr_desp = list_namonr_desp[index]
-            list_enitritor_desp = lista_despejos[6]
-            enitritor_desp = list_enitritor_desp[index]
-            list_nnitrator_desp = lista_despejos[7]
-            nnitrator_desp = list_nnitrator_desp[index]
-            list_porgr_desp = lista_despejos[8]
-            porgr_desp = list_porgr_desp[index]
-            list_pinorgr_desp = lista_despejos[9]
-            pinorgr_desp = list_pinorgr_desp[index]
-            list_colif_desp = lista_despejos[10]
-            colif_desp = list_colif_desp[index]
-
-            if comp in dist_despejos:
-                index4 = dist_despejos.index(comp)
-                od = mistura(od_despejos[index4], q_despejos[index4],
-                             od, vazao)
-                dbo5 = mistura(dbo5_desp[index4], q_despejos[index4],
-                               dbo5, vazao)
-                colif = mistura(colif_desp[index4], q_despejos[index4],
-                                colif, vazao)
-                norgr = mistura(norgr_desp[index4], q_despejos[index4],
-                                norgr, vazao)
-                namonr = mistura(namonr_desp[index4], q_despejos[index4],
-                                 namonr, vazao)
-                nnitritor = mistura(enitritor_desp[index4],
-                                    q_despejos[index4], nnitritor, vazao)
-                nnitrator = mistura(nnitrator_desp[index4],
-                                    q_despejos[index4], nnitrator, vazao)
-                porgr = mistura(porgr_desp[index4], q_despejos[index4],
-                                porgr, vazao)
-                pinorgr = mistura(pinorgr_desp[index4],
-                                  q_despejos[index4], pinorgr, vazao)
-
-                vazao += q_despejos[index4]
-
-        # DBO5
-        dbo5 += (- ((kd + ks) * dbo5 * tempo_delta)
-                 + ((list_lrd[index] / (profundidade * 4)) * tempo_delta))
-
-        # NITROGÊNIO
-        if od <= 0:
-            fnitr = 0.00001
+            k_2 = 5.3 * (hidraulica.velocidade ** 0.67) * (hidraulica.profundidade ** -1.85)
+    elif 0.03 <= hidraulica.vazao <= 8.5:
+        if 0.03 <= hidraulica.vazao < 0.3:
+            k_2 = 31.6 * hidraulica.velocidade * hidraulica.inclinacao
         else:
-            fnitr = 1 - np.exp(1) ** (-list_knitr[index] * od)
+            k_2 = 15.4 * hidraulica.velocidade * hidraulica.inclinacao
+    else:
+        k_2 = 20.74 * (hidraulica.vazao ** -0.42)
 
-        norgr += - (norgr * (kso + koa) * tempo_delta)
+    return k_2
 
-        namonr += ((koa * norgr) - (kan * fnitr * snamon)
-                   + (snamon / profundidade)) * tempo_delta
 
-        nnitritor += ((kan * fnitr * namonr)
-                      - (knn * fnitr * nnitritor)) * tempo_delta
+def mistura(parametro, e_paramentro, vazao, e_vazao):
+    conc = ((parametro * (vazao - e_vazao)) + (e_paramentro * e_vazao)) / vazao
+    return conc
 
-        nnitrator += (knn * fnitr * nnitritor * tempo_delta)
 
-        n_total = norgr + namonr + nnitritor + nnitrator
+def od(tempo_delta, coeficientes, concentracoes, hidraulica, f_nitr, od_saturacao, anaerobiose):
+    
+    if anaerobiose:
+        conc_od = 0
+    
+    else:
+        k_t = 1 / (1 - np.exp(-5 * (coeficientes.k_1 * (1.047 ** (coeficientes.temperatura - 20)))))
+        k_r = (coeficientes.k_d * (1.047 ** (coeficientes.temperatura - 20))
+               ) + (coeficientes.k_s * (1.024 ** (coeficientes.temperatura - 20)))
+        conc = (coeficientes.k_2 * (1.024 ** (coeficientes.temperatura - 20)) * (od_saturacao - concentracoes.conc_od)
+                ) - (k_r * k_t * concentracoes.conc_dbo
+                     ) - (coeficientes.r_o2_amon * f_nitr * concentracoes.conc_n_amon * coeficientes.k_an * (1.08 ** (coeficientes.temperatura - 20))
+                          ) - (coeficientes.s_d * (1.06 ** (coeficientes.temperatura - 20)) / hidraulica.profundidade)
+        conc_od = concentracoes.conc_od + (tempo_delta * conc)
 
-        # OD
-        reaeracao = k2 * (od_saturacao - od) * tempo_delta
+        if conc_od <= 0:
+            anaerobiose = True
+            conc_od = 0
+    return conc_od, anaerobiose
 
-        decomposicao = -(kd * dbo5 * kt * tempo_delta)
 
-        oxid_amonia = -(list_o2namon[index] * namonr
-                        * kan * fnitr * tempo_delta)
+def dbo(tempo_delta, coeficientes, concentracoes, hidraulica, anaerobiose):
 
-        oxid_nitrito = -(list_o2nnitri[index] * nnitritor
-                         * knn * fnitr * tempo_delta)
+    od_saturacao = (1 - (hidraulica.altitude/9450)) * (
+        14.652 - (4.1022 * (10 ** -1) * coeficientes.temperatura)
+        + (7.991 * (10 ** -3) * (coeficientes.temperatura ** 2))
+        - (7.7774 * (10 ** -5) * (coeficientes.temperatura ** 3)))
 
-        fotossintese = (taxa_fotossintese / profundidade) * tempo_delta
+    k_r = (coeficientes.k_d * (1.047 ** (coeficientes.temperatura - 20))
+           ) + (coeficientes.k_s * (1.024 ** (coeficientes.temperatura - 20)))
+    
+    conc = (- k_r * concentracoes.conc_dbo) + (coeficientes.l_rd / (hidraulica.profundidade * hidraulica.largura_rio))
+    conc_dbo_aerobio = concentracoes.conc_dbo + (tempo_delta * conc)
 
-        respiracao = -(taxa_respiracao / profundidade) * tempo_delta
+    if anaerobiose:
+        conc_ana = - (coeficientes.k_2 * (1.024 ** (coeficientes.temperatura - 20)) * od_saturacao)
+        conc_dbo_anaerobio = concentracoes.conc_dbo + (tempo_delta * conc_ana)
+        if abs(conc_dbo_anaerobio - conc_dbo_aerobio) <= 0.001:
+            anaerobiose = False
+            conc_dbo = conc_dbo_aerobio
+        else:
+            conc_dbo = conc_dbo_anaerobio
+    else:
+        conc_dbo = conc_dbo_aerobio
 
-        sedimento = -(taxa_sedimento / profundidade) * tempo_delta
+    return conc_dbo, od_saturacao, anaerobiose
 
-        od = (reaeracao + decomposicao + oxid_amonia + oxid_nitrito
-              + fotossintese + respiracao + sedimento)
 
-        if od < 0:
-            od = 0
+def no(tempo_delta, coeficientes, concentracoes):
+    conc = - ((coeficientes.k_oa * (1.047 ** (coeficientes.temperatura - 20))
+               ) + (coeficientes.k_so * (1.024568 ** (coeficientes.temperatura - 20)))) * concentracoes.conc_no
+    conc_no = concentracoes.conc_no + (tempo_delta * conc)
+    return conc_no
 
-        # FÓSFORO
-        porgr += -(porgr * (kspo + koi) * tempo_delta)
 
-        pinorgr += ((koi * porgr) + (spinorg / profundidade)) * tempo_delta
+def n_amon(tempo_delta, coeficientes, concentracoes, hidraulica, f_nitr):
+    conc = (coeficientes.k_oa * (1.047 ** (coeficientes.temperatura - 20)) * concentracoes.conc_no
+               ) - (f_nitr * concentracoes.conc_n_amon *coeficientes.k_an * (1.08 ** (coeficientes.temperatura - 20))
+                   ) + (coeficientes.s_amon * (1.074 ** (coeficientes.temperatura - 20)) / hidraulica.profundidade)
+    conc_n_amon = concentracoes.conc_n_amon + (tempo_delta * conc)
+    return conc_n_amon
 
-        p_total = porgr + pinorgr
 
-        # COLIFORMES
-        colif += -(colif * kb * tempo_delta)
+def nitrito(tempo_delta, coeficientes, concentracoes, f_nitr):
+    conc = (f_nitr * concentracoes.conc_n_amon * coeficientes.k_an * (1.08 ** (coeficientes.temperatura - 20))
+            ) - (f_nitr * concentracoes.conc_nitrito * coeficientes.k_nn * (1.047 ** (coeficientes.temperatura - 20)))
+    conc_nitrito = concentracoes.conc_nitrito + (tempo_delta * conc)
+    return conc_nitrito
 
-        if index == 0:
-            list_qr_final.append(vazao)
-            list_od_final.append(od)
-            list_dbo5_final.append(dbo5)
-            list_colif_final.append(colif)
-            list_norgr_final.append(norgr)
-            list_namonr_final.append(namonr)
-            list_nnitritor_final.append(nnitritor)
-            list_nnitrator_final.append(nnitrator)
-            list_porgr_final.append(porgr)
-            list_pinorgr_final.append(pinorgr)
-            list_n_total_final.append(n_total)
-            list_p_total_final.append(p_total)
 
-    list_parametros_finais = [vazao, od, dbo5, colif, norgr, namonr, nnitritor,
-                              nnitrator, porgr, pinorgr]
+def nitrato(tempo_delta, coeficientes, concentracoes, f_nitr):
+    conc = (f_nitr * coeficientes.k_nn * concentracoes.conc_nitrito * (1.047 ** (coeficientes.temperatura - 20)))
+    conc_nitrato = concentracoes.conc_nitrato + (tempo_delta * conc)
+    return conc_nitrato
 
-    list_final = [lista_delta, list_qr_final, list_od_final, list_dbo5_final,
-                  list_colif_final, list_norgr_final, list_namonr_final,
-                  list_nnitritor_final, list_nnitrator_final,
-                  list_porgr_final, list_pinorgr_final,
-                  list_n_total_final, list_p_total_final]
-    return list_parametros_finais, list_final
+
+def p_org(tempo_delta, coeficientes, concentracoes):
+    conc = - ((coeficientes.k_oi * (1.047 ** (coeficientes.temperatura - 20))
+               ) + (coeficientes.k_spo * (1.024 ** (coeficientes.temperatura - 20)))) * concentracoes.conc_p_org 
+    conc_p_org = concentracoes.conc_p_org + (tempo_delta * conc)
+    return conc_p_org
+
+
+def p_inorg(tempo_delta, coeficientes, concentracoes, hidraulica):
+    conc = (coeficientes.k_oi * (1.047 ** (coeficientes.temperatura - 20)) * concentracoes.conc_p_inorg
+            ) + (coeficientes.s_pinorg * (1.074 ** (coeficientes.temperatura - 20)) / hidraulica.profundidade)
+    conc_p_inorg = concentracoes.conc_p_inorg + (tempo_delta * conc)
+    return conc_p_inorg
+
+
+def e_coli(tempo_delta, coeficientes, concentracoes):
+    conc = - coeficientes.k_b * concentracoes.conc_e_coli * (1.07 ** (coeficientes.temperatura - 20))
+    conc_e_coli = concentracoes.conc_e_coli + (tempo_delta * conc)
+    return conc_e_coli
+
+
+def modelagem(lista_final, lista_e_coeficientes, lista_s_pontual, lista_e_pontual,
+              lista_e_difusa, rio, discretizacao, lista_modelagem):
+    anaerobiose = False
+    vazao = 0
+    concentracoes = Concentracoes(None, None, None, None, None, None, None, None, None, None)
+    coeficientes = Coeficientes(None, None, None, None, None, None, None, None, None, None,
+                                None, None, None, None, None, None, None, None, None, None)
+
+    for i in range(len(lista_final)):
+        hidraulica = lista_final[i].hidraulica
+        
+        for j in range(len(lista_e_coeficientes)):
+            atual = lista_e_coeficientes[j]
+            if atual.comprimento == hidraulica.comprimento:
+                k_2_calculavel = atual.coeficientes.k_2_calculavel
+                k_2_max = atual.coeficientes.k_2_max
+                if lista_modelagem[0]:
+                    if k_2_calculavel:
+                        k_2 = k2(lista_final[0].hidraulica)
+                        if k_2 > atual.coeficientes.k_2_max:
+                            k_2 = atual.coeficientes.k_2_max
+                    else:
+                        k_2 = atual.coeficientes.k_2
+                else:
+                    k_2 = atual.coeficientes.k_2
+                temperatura = atual.coeficientes.temperatura
+                k_1 = atual.coeficientes.k_1
+                s_d = atual.coeficientes.s_d
+                k_d = atual.coeficientes.k_d
+                k_s = atual.coeficientes.k_s
+                l_rd = atual.coeficientes.l_rd
+                k_so = atual.coeficientes.k_so
+                k_oa = atual.coeficientes.k_oa
+                k_an = atual.coeficientes.k_an
+                k_nn = atual.coeficientes.k_nn
+                s_amon = atual.coeficientes.s_amon
+                k_spo = atual.coeficientes.k_spo
+                k_oi = atual.coeficientes.k_oi
+                k_b = atual.coeficientes.k_b
+                r_o2_amon = atual.coeficientes.r_o2_amon
+                k_nit_od = atual.coeficientes.k_nit_od
+                s_pinorg = atual.coeficientes.s_pinorg
+
+        coeficientes.k_2 = k_2
+        coeficientes.k_2_calculavel = k_2_calculavel
+        coeficientes.k_2_max = k_2_max
+        coeficientes.temperatura = temperatura
+        coeficientes.k_1 = k_1
+        coeficientes.s_d = s_d
+        coeficientes.k_d = k_d
+        coeficientes.k_s = k_s
+        coeficientes.l_rd = l_rd
+        coeficientes.k_so = k_so
+        coeficientes.k_oa = k_oa
+        coeficientes.k_an = k_an
+        coeficientes.k_nn = k_nn
+        coeficientes.s_amon = s_amon
+        coeficientes.k_spo = k_spo
+        coeficientes.k_oi = k_oi
+        coeficientes.k_b = k_b
+        coeficientes.r_o2_amon = r_o2_amon
+        coeficientes.k_nit_od = k_nit_od
+        coeficientes.s_pinorg = s_pinorg
+        
+        if i == 0:
+            concentracoes = lista_e_pontual[0].concentracoes
+
+        else:
+            tempo_delta = discretizacao / (hidraulica.velocidade * 86400)
+            
+            if lista_modelagem[3]:
+                f_nitr = 1 - np.exp(1) ** (- coeficientes.k_nit_od * concentracoes.conc_od)
+            
+            if lista_modelagem[0] or lista_modelagem[2]:
+                concentracoes.conc_dbo, od_saturacao, anaerobiose = dbo(tempo_delta, coeficientes, concentracoes, hidraulica, anaerobiose)
+            if lista_modelagem[3]:
+                concentracoes.conc_no = no(tempo_delta, coeficientes, concentracoes)
+                concentracoes.conc_n_amon = n_amon(tempo_delta, coeficientes, concentracoes, hidraulica, f_nitr)
+                concentracoes.conc_nitrito = nitrito(tempo_delta, coeficientes, concentracoes, f_nitr)
+                concentracoes.conc_nitrato = nitrato(tempo_delta, coeficientes, concentracoes, f_nitr)
+            if lista_modelagem[0]:
+                concentracoes.conc_od, anaerobiose = od(tempo_delta, coeficientes, concentracoes, hidraulica, f_nitr, od_saturacao, anaerobiose)
+            if lista_modelagem[4]:
+                concentracoes.conc_p_org = p_org(tempo_delta, coeficientes, concentracoes)
+                concentracoes.conc_p_inorg = p_inorg(tempo_delta, coeficientes, concentracoes, hidraulica)
+                concentracoes.conc_p_total = concentracoes.conc_p_org + concentracoes.conc_p_inorg
+            if lista_modelagem[5]:
+                concentracoes.conc_e_coli = e_coli(tempo_delta, coeficientes, concentracoes)
+          
+        for k in range(len(lista_e_pontual)):
+            ep_concetracoes = lista_e_pontual[k].concentracoes
+            if hidraulica.comprimento == lista_e_pontual[k].comprimento:
+                vazao += lista_e_pontual[k].vazao
+                if lista_modelagem[0]:
+                    concentracoes.conc_od = mistura(concentracoes.conc_od, ep_concetracoes.conc_od, vazao, lista_e_pontual[k].vazao)
+                if lista_modelagem[0] or lista_modelagem[2]:
+                    concentracoes.conc_dbo = mistura(concentracoes.conc_dbo, ep_concetracoes.conc_dbo, vazao, lista_e_pontual[k].vazao)
+                if lista_modelagem[3]:
+                    concentracoes.conc_no = mistura(concentracoes.conc_no, ep_concetracoes.conc_no, vazao, lista_e_pontual[k].vazao)
+                    concentracoes.conc_n_amon = mistura(concentracoes.conc_n_amon, ep_concetracoes.conc_n_amon, vazao, lista_e_pontual[k].vazao)
+                    concentracoes.conc_nitrito = mistura(concentracoes.conc_nitrito, ep_concetracoes.conc_nitrito, vazao, lista_e_pontual[k].vazao)
+                if lista_modelagem[4]:
+                    concentracoes.conc_p_org = mistura(concentracoes.conc_p_org, ep_concetracoes.conc_p_org, vazao, lista_e_pontual[k].vazao)
+                    concentracoes.conc_p_inorg = mistura(concentracoes.conc_p_inorg, ep_concetracoes.conc_p_inorg, vazao, lista_e_pontual[k].vazao)
+                    concentracoes.conc_p_total = concentracoes.conc_p_org + concentracoes.conc_p_inorg
+                if lista_modelagem[5]:
+                    concentracoes.conc_e_coli = mistura(concentracoes.conc_e_coli, ep_concetracoes.conc_e_coli, vazao, lista_e_pontual[k].vazao)
+
+        if len(lista_e_difusa) > 0 :
+            for n in range(len(lista_e_difusa)):
+                ed_concetracoes = lista_e_difusa[n].concentracoes
+                if lista_e_difusa[n].comprimento_inicial <= hidraulica.comprimento <= lista_e_difusa[n].comprimento_final:
+
+                    vazao_difusa = (lista_e_difusa[n].vazao *  discretizacao
+                                    ) / (lista_e_difusa[n].comprimento_final - lista_e_difusa[n].comprimento_inicial)
+                    vazao += vazao_difusa
+
+                    if lista_modelagem[0]:
+                        concentracoes.conc_od = mistura(concentracoes.conc_od, ed_concetracoes.conc_od, hidraulica.vazao, vazao_difusa)
+                    if lista_modelagem[0] or lista_modelagem[2]:
+                        concentracoes.conc_dbo = mistura(concentracoes.conc_dbo, ed_concetracoes.conc_dbo, hidraulica.vazao, vazao_difusa)
+                    if lista_modelagem[3]:
+                        concentracoes.conc_no = mistura(concentracoes.conc_no, ed_concetracoes.conc_no, hidraulica.vazao, vazao_difusa)
+                        concentracoes.conc_n_amon = mistura(concentracoes.conc_n_amon, ed_concetracoes.conc_n_amon, hidraulica.vazao, vazao_difusa)
+                        concentracoes.conc_nitrito = mistura(concentracoes.conc_nitrito, ed_concetracoes.conc_nitrito, hidraulica.vazao, vazao_difusa)
+                    if lista_modelagem[4]:
+                        concentracoes.conc_p_org = mistura(concentracoes.conc_p_org, ed_concetracoes.conc_p_org, hidraulica.vazao, vazao_difusa)
+                        concentracoes.conc_p_inorg = mistura(concentracoes.conc_p_inorg, ed_concetracoes.conc_p_inorg, hidraulica.vazao, vazao_difusa)
+                        concentracoes.conc_p_total = concentracoes.conc_p_org + concentracoes.conc_p_inorg
+                    if lista_modelagem[5]:
+                        concentracoes.conc_e_coli = mistura(concentracoes.conc_e_coli, ed_concetracoes.conc_e_coli, hidraulica.vazao, vazao_difusa)
+    
+        if len(lista_s_pontual) > 0 :
+            for p in range(len(lista_s_pontual)):
+                    if hidraulica.comprimento == lista_s_pontual[p].comprimento:
+                        vazao -= lista_s_pontual[p].vazao
+ 
+        lista_final[i].concentracoes = copy.deepcopy(concentracoes)
+        lista_final[i].coeficientes = copy.deepcopy(coeficientes)
+        lista_final[i].rio = rio
+    return lista_final
+
+    
+def modelagem_Final(lista_rio, ponto_af, lista_modelagem):
+    lista_afluente = []
+    lista_completa_final = []
+    for i in range(len(lista_rio)):
+        dados = lista_rio[i]
+        if dados.rio != 0:
+            lista_hidr_model = func_hidraulica(dados.lista_hidraulica, dados.lista_s_pontual,
+                                               dados.lista_e_pontual, dados.lista_e_difusa,
+                                               dados.lista_s_transversal, dados.discretizacao)
+            lista_final = modelagem(lista_hidr_model, dados.lista_e_coeficientes, dados.lista_s_pontual,
+                                    dados.lista_e_pontual, dados.lista_e_difusa, dados.rio,
+                                    dados.discretizacao, lista_modelagem)
+            afluente = EntradaPontual(ponto_af[i][1], ponto_af[i][2],
+                                    ponto_af[i][3], lista_final[-1].concentracoes,
+                                    lista_final[-1].hidraulica.vazao, ponto_af[i][0], lista_final[-1].rio)
+            lista_afluente.append(copy.deepcopy(afluente))
+        else:
+            if len(lista_rio) > 1:
+                for j in range(len(lista_afluente)):
+                    dist_ant = 10 ** 50
+                    if str(lista_afluente[j].latitude) != 'nan':
+                        for k in range(len(dados.lista_hidraulica)):
+                            distancia = fun_hipotenusa(lista_afluente[j].latitude, dados.lista_hidraulica[k].latitude,
+                                                       lista_afluente[j].longitude, dados.lista_hidraulica[k].longitude)
+                            if distancia <= dist_ant:
+                                comp = dados.lista_hidraulica[k].comprimento
+                                dist_ant = distancia
+                    else:
+                        for k in range(len(dados.lista_hidraulica)):
+                            distancia = abs(lista_afluente[j].comprimento - dados.lista_hidraulica[k].comprimento)
+                            if distancia <= dist_ant:
+                                comp = dados.lista_hidraulica[k].comprimento
+                                dist_ant = distancia
+                lista_afluente[j].comprimento = comp
+                add = dados.lista_e_pontual
+                add.append(copy.deepcopy(lista_afluente[j]))
+            else:
+                add = dados.lista_e_pontual
+            lista_hidr_model = func_hidraulica(dados.lista_hidraulica, dados.lista_s_pontual,
+                                               add, dados.lista_e_difusa,
+                                               dados.lista_s_transversal, dados.discretizacao)
+            lista_final = modelagem(lista_hidr_model, dados.lista_e_coeficientes, dados.lista_s_pontual,
+                                    add, dados.lista_e_difusa, dados.rio,
+                                    dados.discretizacao, lista_modelagem)
+        lista_completa_final.append(lista_final)
+    return lista_completa_final, add
+
