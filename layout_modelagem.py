@@ -579,13 +579,13 @@ def fun_contrib_retirad(data, n_tributarios, labels, lista_tabs, list_name, list
 
 ####################### SALVAR ARQUIVO JSON #######################
 def salvararquivo(lista_modelagem, lista_parametros, lista_coeficiente, lista_contr_retir,
-                  list_name, list_valores):
+                  list_name_salvo, list_valores):
     col_1, col_2 = st.columns(2)
     salvar = col_2.toggle('Salvar dados preenchidos.')
     if salvar:
         data = {'dados': [{'Paramêtros': lista_modelagem, 'Dados gerais': lista_parametros,
                 'Coeficientes': lista_coeficiente, 'Contr e Retir': lista_contr_retir,
-                'Nomes': list_name, 'Valores': list_valores}]}
+                'Nomes': list_name_salvo, 'Valores': list_valores}]}
         from json import dumps
         json_string = dumps(data)
 

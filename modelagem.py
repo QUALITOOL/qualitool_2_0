@@ -2,6 +2,7 @@ import streamlit as st
 from layout_modelagem import inicio, dados_iniciais, coeficientes
 from layout_modelagem import fun_contrib_retirad, salvararquivo
 from resultados import transformacao, resultados, plotar
+import copy
 
 
 def modelagem(selected, menu):
@@ -16,6 +17,8 @@ def modelagem(selected, menu):
 
         lista_parametros, list_name, list_valores, zona, hemisferio = dados_iniciais(data, lista_modelagem, n_trib,
                                         labels, lista_tabs)
+        
+        list_name_salvo = copy.deepcopy(list_name)
         ponto_af = lista_parametros[-1]
 
         lista_coeficientes = coeficientes(data, lista_modelagem, n_trib,
@@ -23,8 +26,7 @@ def modelagem(selected, menu):
 
         lista_contr_retir = fun_contrib_retirad(data, n_trib, labels, lista_tabs, list_name, list_valores)
 
-        salvararquivo(lista_modelagem, lista_parametros, lista_coeficientes, lista_contr_retir, list_name, list_valores)
-
+        salvararquivo(lista_modelagem, lista_parametros, lista_coeficientes, lista_contr_retir, list_name_salvo, list_valores)
 
         # botão
         botao = st.button(

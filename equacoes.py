@@ -1,8 +1,6 @@
 import numpy as np
-import pandas as pd
 import scipy.optimize as opt
 import copy
-import streamlit as st
 
 ##########################################################################################################
 # OBJETOS

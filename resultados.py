@@ -464,7 +464,7 @@ def plotar(n_tributarios, lista_modelagem, lidt_df, list_entr, labels, zona, hem
                         side="right",
                         showline=True,
                         tickcolor="black",
-                        ticklen=4,
+                        ticklen=4
             ),)
 
         for pt in range(len(list_entr) - 1):
