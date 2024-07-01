@@ -371,15 +371,12 @@ def modelagem(lista_final, lista_e_coeficientes, lista_s_pontual, lista_e_pontua
             if atual.comprimento == hidraulica.comprimento:
                 k_2_calculavel = atual.coeficientes.k_2_calculavel
                 k_2_max = atual.coeficientes.k_2_max
+                k_2 = atual.coeficientes.k_2
                 if lista_modelagem[0]:
                     if k_2_calculavel:
                         k_2 = k2(lista_final[0].hidraulica)
                         if k_2 > atual.coeficientes.k_2_max:
                             k_2 = atual.coeficientes.k_2_max
-                    else:
-                        k_2 = atual.coeficientes.k_2
-                else:
-                    k_2 = atual.coeficientes.k_2
                 temperatura = atual.coeficientes.temperatura
                 k_1 = atual.coeficientes.k_1
                 s_d = atual.coeficientes.s_d
