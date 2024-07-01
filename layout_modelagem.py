@@ -307,7 +307,7 @@ def coeficientes(data, lista_modelagem, n_tributarios, labels, lista_tabs):
                  'Longitude (UTM)',
                  'Comprimento (m)',
                  'Temperatura (°C)']
-    list_valores = [None, None, None, 22.0]
+    list_valores = [None, None, 0.0, 22.0]
     if lista_modelagem[1]:
         list_name.append('k2 (1/d)')
         list_valores.append(0.0)
