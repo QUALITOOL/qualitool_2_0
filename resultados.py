@@ -250,7 +250,7 @@ def transformacao(lista_modelagem, lista_parametros, lista_coeficiente,
 
         conc_ep = [copy.deepcopy(EntradaPontual(lista_parametros[3][i][0],
                                                 lista_parametros[2][i][0],
-                                                lista_parametros[1][i][0],
+                                                0.0,
                                                 copy.deepcopy(conc),
                                                 lista_parametros[0][i][0],
                                                 'Início',
