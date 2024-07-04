@@ -469,7 +469,7 @@ def plotar(n_tributarios, lista_modelagem, lidt_df, list_entr, labels, zona, hem
 
         for pt in range(len(list_entr) - 1):
 
-            if str(list_entr[0 + 1].descricao) == 'nan' and r == 0:
+            if str(list_entr[0 + 1].descricao) == 'nan':
 
                 fig.add_vline(
                     x=list_entr[pt + 1].comprimento,
