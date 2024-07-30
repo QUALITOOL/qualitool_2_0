@@ -1,11 +1,11 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-
+import copy
 
 
 def inicio(paramentro):
-
+    
     st.divider()
     dados_anterior = st.checkbox("Preenchimento automático.")
     data = False
@@ -24,13 +24,15 @@ def inicio(paramentro):
              recomenda-se preencher de forma manual novamente.""")
     else:
         st.warning('''Se for a sua primeira vez no Qualitool 2.0,
-        você terá que preencher os dados de forma manual.''',
-                  icon="❕")
+                      você terá que preencher os dados de forma manual.''',
+                      icon="❕")
     st.divider()
     
     col_1, col_2 = st.columns(2)
-    col_2.warning('''Atenção! Caso a tela atualize os dados já preenchidos
-                  serão pertidos e devão ser preenchidos novamente.''',
+    bar = st.sidebar
+    bar.warning('''Atenção! Em caso de atualização da tela, os dados 
+                já preenchidos serão perdidos e precisarão ser 
+                inseridos novamente.''',
                   icon="⚠️")
 
     col_1.markdown('Qual(s) parâmetro(s) modelar?')
@@ -39,19 +41,25 @@ def inicio(paramentro):
     if data != False:
         disab = True
     modelar_od = col_1_1.checkbox('OD', value=paramentro[0], disabled=disab)
-    if modelar_od:
-            modelar_k_2 = col_1_1.checkbox('k2 tabelado', value=paramentro[1], disabled=disab)
-    else:
-        modelar_k_2 = False
     modelar_dbo = col_1_1.checkbox('DBO', value=paramentro[2], disabled=disab)
-    modelar_n = col_1_2.checkbox('Nitrogênio', value=paramentro[3], disabled=disab)
+    modelar_n = col_1_1.checkbox('Nitrogênio', value=paramentro[3], disabled=disab)
     modelar_p = col_1_2.checkbox('Fósforo', value=paramentro[4], disabled=disab)
     modelar_colif = col_1_2.checkbox('Coliformes', value=paramentro[5], disabled=disab)
+
+    col_2.markdown('Configurações gerais:')
+    serie_tempo = col_2.toggle('Ativar avaliação temporal.', value=paramentro[7], disabled=disab)
+    if modelar_od:
+            modelar_k_2 = col_2.toggle('Coeficiente k2 será tabelado.', value=paramentro[1], disabled=disab)
+    else:
+        modelar_k_2 = False
+
     n_tributarios = col_2.number_input(
         'Quantidade de tributários modeláveis:', min_value=0,
         value=paramentro[6], disabled=disab)
+    
+    
     lista_modelagem = [modelar_od, modelar_k_2, modelar_dbo, modelar_n,
-                       modelar_p, modelar_colif, n_tributarios]
+                       modelar_p, modelar_colif, n_tributarios, serie_tempo]
 
     lista_tabs = ["tab0"]
     labels = ["Rio principal"]
@@ -66,6 +74,7 @@ def inicio(paramentro):
 def dados_iniciais(data, lista_modelagem, n_tributarios, labels, lista_tabs):
     # DADOS DE ENTRADA INICIAIS
     ponto_af = []
+    list_desague = []
     list_valor_i = []
     list_discretizacao = []
     list_comprimento = []
@@ -76,6 +85,7 @@ def dados_iniciais(data, lista_modelagem, n_tributarios, labels, lista_tabs):
     list_qnt_secaotrav = []
     zona = None
     hemisferio = None
+    id_hmf = 0
 
     
     list_name_hid = ['Latitude (UTM)',
@@ -85,7 +95,7 @@ def dados_iniciais(data, lista_modelagem, n_tributarios, labels, lista_tabs):
                     'Largura (m)',
                     'Ângulo esquerdo (°)',
                     'Ângulo direito (°)']
-    list_valores_hid = [None, None, None, 0.0, 0.0, 0.0, 0.0]
+    list_valores_hid = [None, None, 0.0, 0.0, 0.0, 0.0, 0.0]
 
     for i in range(n_tributarios + 1):
         
@@ -105,8 +115,33 @@ def dados_iniciais(data, lista_modelagem, n_tributarios, labels, lista_tabs):
         preecheu = False
         expander = lista_tabs[i].expander(
             "**:orange[DADOS DE ENTRADA INICIAIS]**")
+        
+        if i > 0:
+            coll1, coll2 = expander.columns(2)
+            labels_mod = copy.deepcopy(labels)
+            labels_mod.remove(labels[i])
+
+            if data != False:
+                af_valor = data['Dados gerais'][8][i - 1]
+                dt_desague = data['Dados gerais'][9][i - 1] - 1
+                dt_desague = 0 if dt_desague < 0 else dt_desague
+            else:
+                af_valor = [0.0, None, None, None]
+                dt_desague = 0
+            desague = coll1.selectbox(str(i) + '. Deságua no:', labels_mod, index=dt_desague)
+            coll2.markdown("Ponto de deságue em relação o " + desague + ":")
+
+            df_afl = pd.DataFrame({
+                str(i) + '. Descrição': ['ID (opcional)', 'Latitude (UTM)', 'Longitude (UTM)', 'Comprimento (m)'],
+                'Valores': af_valor})
+            df_afl_f = coll2.data_editor(df_afl, disabled=[str(i) + '. Descrição'])
+            ponto_af.append(list(df_afl_f['Valores']))
+            list_desague.append(labels.index(desague))
+            
+            expander.divider()
+
         col_11, col_12 = expander.columns(2)
-        col_121, col_122 = col_12.columns(2)
+        _, col_122 = col_12.columns(2)
         discret = col_122.number_input(
             str(i) + '. Discretização (m)', value=dis_i,
             min_value=0.1, step=1e-2, format="%.2f")
@@ -181,63 +216,25 @@ def dados_iniciais(data, lista_modelagem, n_tributarios, labels, lista_tabs):
                 comprimento = []
                 for ct in range(len(altitude)):
                     comprimento.append(None)
-
-        expander.divider()
-        col1, col2 = expander.columns(2)
-
-
-        if i > 0:
-            col1.markdown(":orange[Ponto em relação ao " + str(labels[0]) + ":]")
-            if data != False:
-                af_valor = data['Dados gerais'][8][i - 1]
-            else:
-                af_valor = [0.0, None, None, None]
-            df_afl = pd.DataFrame({
-                str(i) + '. Descrição': ['ID (opcional)', 'Latitude (UTM)', 'Longitude (UTM)', 'Comprimento (m)'],
-                'Valores': af_valor})
-            df_afl_f = col1.data_editor(df_afl, disabled=[str(i) + '. Descrição'])
-            ponto_af.append(list(df_afl_f['Valores']))
-
-
-
-        col1.markdown(":orange[Variáveis iniciais do " + str(labels[i]) + ":]")
-        if data != False:
-            list_name = data['Nomes']
-            list_valores = data['Dados gerais'][0][i]
-
-        ############################################
-        else:
-            list_name = ['Vazão (m³/s)']
-            list_valores = [0]
-            if lista_modelagem[0]:
-                list_name.extend(['Oxigênio dissolvido (mg/L)',
-                                    'DBO (mg/L)'])
-                list_valores.extend([0.0, 0.0])
-            if lista_modelagem[3]:
-                list_name.extend(['Nitrogênio orgânico (mg/L)',
-                                    'Amônia (mg/L)',
-                                    'Nitrito (mg/L)'])
-                list_valores.extend([0.0, 0.0, 0.0])
-            if lista_modelagem[4]:
-                list_name.extend(['Fósforo orgânico (mg/L)',
-                                    'Fósforo inorgânico (mg/L)'])
-                list_valores.extend([0.0, 0.0])
-            if lista_modelagem[5]:
-                list_name.append('E-coli (NMP/100ml)')
-                list_valores.append(0.0)
-
-        df_conc = pd.DataFrame({str(i) + '. Descrição': list_name, 'Valores': list_valores})
-        df_conc_f = col1.data_editor(df_conc, disabled=[str(i) + '. Descrição'])
         if preecheu:
-            coln1, coln2 = col2.columns(2)
+            col1, col2 = expander.columns(2)
+            coln1, coln2 = col1.columns(2)
+            if data != False:
+                id_hmf = data['Dados gerais'][11][i]
+                zona_dt = data['Dados gerais'][10][i]
+
+            else:
+                zona_dt = 22
             zona = coln1.number_input(
-                str(i) + '. WGS 84 - UTM - Zona:', min_value=0, value=22)
+                str(i) + '. WGS 84 - UTM - Zona:', min_value=0, value=zona_dt)
             hemisferio = coln2.radio(str(i) + '. Hemisfério:', ['Sul', 'Norte'],
-                                    horizontal=True)
+                                    horizontal=True, index=id_hmf)
             if hemisferio == 'Sul':
                 hemisferio = 'south'
+                id_hmf = 0
             else:
                 hemisferio = 'north'
+                id_hmf = 1
             on = col2.toggle(str(i) + '. Visualizar dados espaciais')
         
             if on:
@@ -251,20 +248,107 @@ def dados_iniciais(data, lista_modelagem, n_tributarios, labels, lista_tabs):
                 df_plot['lon'], df_plot['lat'] = myProj(df_plot['UTMlon'].values,
                                                         df_plot['UTMlat'].values,
                                                         inverse=True)
-                col2.map(df_plot, size = 1, color='#007FFF')
+                expander.map(df_plot, size = 1, color='#007FFF')
 
         else:       
             if tipo_entrada == "Intervalo":
                 comprimento = list(np.arange(0, comp + discret, discret))
+                
                 for k in range(len(comprimento)):
                     altitude.append(altit - (discret * incl))
                     latitude.append(None)
                     longitude.append(None)
+
+        expander.divider()
+
+        expander.markdown(":orange[Variáveis iniciais do " + str(labels[i]) + ":]")
+
+
+        ############################################
+        if lista_modelagem[7]:
+            list_name = ['Data',str(i) + '. Q (m³/s)']
+            list_valores = [None, [0.0]] 
+        else:
+            list_name = [str(i) + '. Q (m³/s)']
+            list_valores = [[0.0]] 
+
+        if lista_modelagem[0]:
+            list_name.extend(['OD (mg/L)',
+                                'DBO (mg/L)'])
+            list_valores.extend([[0.0], [0.0]])
+        if lista_modelagem[3]:
+            list_name.extend(['N-org (mg/L)',
+                                'N-amon (mg/L)',
+                                'N-nitri (mg/L)',
+                                'N-nitra (mg/L)'])
+            list_valores.extend([[0.0], [0.0], [0.0], [0.0]])
+        if lista_modelagem[4]:
+            list_name.extend(['P-org (mg/L)',
+                                'P-inorg (mg/L)'])
+            list_valores.extend([[0.0], [0.0]])
+        if lista_modelagem[5]:
+            list_name.append('E-coli (NMP/100ml)')
+            list_valores.extend([[0.0]])
+        colmdisab = None
+        if data != False:
+            colmdisab = 'Data'
+            list_valores = data['Dados gerais'][0][i]
+            if lista_modelagem[7]:
+                list_valores[0] = pd.to_datetime(list_valores[0])
+
+        if lista_modelagem[7]:
+            num_rows = "dynamic"
+        else:
+            num_rows = "fixed"
+        df_conc = pd.DataFrame(columns=list_name)
+
+        if i == 0:
+            valores = copy.deepcopy(list_valores)
+            for y in range(len(list_name)):
+                df_conc[list_name[y]] = list_valores[y]
+            df_conc_f = expander.data_editor(df_conc, num_rows=num_rows,
+                                            column_config={
+                                                'Data':st.column_config.DateColumn(
+                                                    format="MM.DD.YYYY", step=1),
+                                                },
+                                            disabled=[colmdisab])
+            dias = list(df_conc_f[list_name[0]])
+            
+        else:
+            valores2 = copy.deepcopy(valores)
+            valores2.pop(0)
+            if lista_modelagem[7] and data == False:
+                l_valor = []
+                for id in range(len(valores2)):
+                    l_valor.append(valores2[id][0])
+                for id2 in range(len(dias)):
+                    soma = [dias[id2]] + l_valor
+                    df_conc.loc[id2] = soma
+            
+            else:
+                for y in range(len(list_name)):
+                    df_conc[list_name[y]] = list_valores[y]
+
+            df_conc_f = expander.data_editor(df_conc,
+                                            column_config={
+                                                'Data':st.column_config.DateColumn(
+                                                    format="MM.DD.YYYY", step=1),
+                                                },
+                                            disabled=['Data'])
+        
+        list_valores_f = []
+        for yf in range(len(list_name)):
+            lista = list(df_conc_f[list_name[yf]])
+            if yf == 0  and lista_modelagem[7] and df_conc_f[list_name[yf]][0] != None and data != False:
+                list_valores_f.append(list(df_conc_f[list_name[yf]].dt.strftime('%Y %m %d')))
+
+            else:
+                list_valores_f.append(lista)
     
 
         expander.divider()
-        expander.markdown(":orange[Secções transversais do " + str(labels[i]) + ":]")
-        col_3_1, col_3_2 = expander.columns(2)
+        expander.markdown(":orange[Seções transversais do " + str(labels[i]) + ":]")
+        col_3_1, _ = expander.columns(2)
         n_pontos_st = col_3_1.number_input(
             str(i) + '. Quantidade de pontos que alteram os valores'
             + ' de uma ou mais variáveis hidráulicas:',
@@ -288,42 +372,32 @@ def dados_iniciais(data, lista_modelagem, n_tributarios, labels, lista_tabs):
         list_latitude.append(latitude)
         list_altitude.append(altitude)
         list_discretizacao.append(discret)
-        list_valor_i.append(list(df_conc_f['Valores']))
+        list_valor_i.append(list_valores_f)
         list_secaotrav.append(hidr)
         list_qnt_secaotrav.append(n_pontos_st)
 
     lista_parametros = [list_valor_i, list_comprimento, list_longitude,
                         list_latitude, list_altitude, list_secaotrav,
-                        list_discretizacao, list_qnt_secaotrav, ponto_af]
-    return lista_parametros, list_name, list_valores, zona, hemisferio
+                        list_discretizacao, list_qnt_secaotrav, ponto_af,
+                        list_desague, zona, id_hmf]
+    
+    return lista_parametros, list_name, valores, zona, hemisferio, dias
 
 
 ########################## COEFICIENTES ###########################
-def coeficientes(data, lista_modelagem, n_tributarios, labels, lista_tabs):
+def coeficientes(data, lista_modelagem, n_tributarios, labels, lista_tabs, dias):
     # COEFICIENTES DDO MODEDELO
-
-    lista_qnt_coef = []
-    list_name = ['Latitude (UTM)',
-                 'Longitude (UTM)',
-                 'Comprimento (m)',
-                 'Temperatura (°C)']
-    list_valores = [None, None, 0.0, 22.0]
+    list_name = ['Temperatura (°C)']
     if lista_modelagem[1]:
         list_name.append('k2 (1/d)')
-        list_valores.append(0.0)
-    if lista_modelagem[1] == False and lista_modelagem[0] == True:
-        list_name.append('k2 máximo (1/d)')
-        list_valores.append(0.0)
     if lista_modelagem[0]:
         list_name.extend(['k1 (1/d)',
                           'kd (1/d)',
                           'ks (1/d)',
                           'lrd (gDBO5/m.d)',
                           'sd (1/d)'])
-        list_valores.extend([0.0, 0.0, 0.0, 0.0, 0.0])
     if lista_modelagem[0] == True and lista_modelagem[3] == True:
         list_name.append('O2namon (mgO2/mgNamon oxid)')
-        list_valores.append(0.0)
     if lista_modelagem[3]:
         list_name.extend(['koa (1/d)',
                           'kso (1/d)',
@@ -331,22 +405,28 @@ def coeficientes(data, lista_modelagem, n_tributarios, labels, lista_tabs):
                           'Snamon (g/m2.d)',
                           'knn (1/d)',
                           'knitr (1/d)'])
-        list_valores.extend([0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
     if lista_modelagem[4]:
         list_name.extend(['koi (1/d)',
                             'kspo (1/d)',
                             'spinorg (1/d)'])
-        list_valores.extend([0.0, 0.0, 0.0])
     if lista_modelagem[5]:
         list_name.append('kb (1/d)')
-        list_valores.append(0.0)
 
     lista_coeficiente = [list_name]
+    lista_n_pontos = []
 
     for i in range(n_tributarios + 1):
+        list_name_c = ['Latitude (UTM)',
+                    'Longitude (UTM)',
+                    'Comprimento (m)']
+        list_valores_c = [None, None, 0.0]
+        if lista_modelagem[1] == False and lista_modelagem[0] == True:
+            list_name_c.append('k2 máximo (1/d)')
+            list_valores_c.append(1000.0)
+
         expander = lista_tabs[i].expander(
             "**:green[COEFICIENTES DO MODELO]**")
-        col_1, col_2 = expander.columns(2)
+        col_11, col_21 = expander.columns(2)
 
         qt_coe = 0
         disab = False
@@ -354,102 +434,127 @@ def coeficientes(data, lista_modelagem, n_tributarios, labels, lista_tabs):
             qt_coe = data['Coeficientes'][1][i]
             disab = True
 
-        option = col_1.selectbox(
-            str(i) + '. Tem dúvida do que significa cada variável?',
-            (list_name),
-            index=None,
-            placeholder="Selecione o nome da variável...",)
-        if option != None:
-            with col_2.chat_message("human", avatar="ai"):
-                if option == 'Latitude (UTM)':
-                    st.write('''Latitude na projeção WGS 84 em coordenadas UTM.''')
-                elif option == 'Longitude (UTM)':
-                    st.write('''Longitude na projeção WGS 84 em coordenadas UTM.''')
-                elif option == 'Comprimento (m)':
-                    st.write('''Comprimento a partir do trecho inicial do rio, em metros.''')
-                elif option == 'Temperatura (°C)':
-                    st.write('''Temperatura do rio, em grau celsius.''')
-                elif option == 'k1 (1/d)':
-                    st.write('''Coeficiente de desoxigenação, na temperatura de 20°C.''')
-                elif option == 'kd (1/d)':
-                    st.write('''Coeficiente de decomposição de DBO, na temperatura de 20°C.''')
-                elif option == 'ks (1/d)':
-                    st.write('''Coeficiente de sedimentação de DBO, na temperatura de 20°C.''')
-                elif option == 'lrd (gDBO5/m.d)':
-                    st.write('''Carga linear distribuída ao longo do rio, na temperatura de 20°C.''')
-                elif option == 'sd (1/d)':
-                    st.write('''Taxa consumo de O2 por demanda do sedimento, na temperatura de 20°C.''')
-                elif option == 'O2namon (mgO2/mgNamon oxid)':
-                    st.write('''Relação entre o oxigênio consumido por cada unidade de 
-                             amônia oxidada a nitrito, na temperatura de 20°C.''')
-                elif option == 'koa (1/d)':
-                    st.write('''Coeficiente de conversão do nitrogênio orgânico 
-                             a amônia, na temperatura de 20°C.''')
-                elif option == 'kso (1/d)':
-                    st.write('''Coeficiente de sedimentação do nitrogênio 
-                             orgânico, na temperatura de 20°C.''')
-                elif option == 'kan (1/d)':
-                    st.write('''Coeficiente de conversão da amônia a 
-                             nitrito, na temperatura de 20°C.''')
-                elif option == 'Snamon (g/m2.d)':
-                    st.write('''Fluxo de liberação de amônia pelo 
-                             sedimento de fundo, na temperatura de 20°C.''')
-                elif option == 'knn (1/d)':
-                    st.write('''Coeficiente de conversão do nitrito a nitrato
-                             , na temperatura de 20°C.''')
-                elif option == 'knitr (1/d)':
-                    st.write('''Coeficiente de inibição da nitrificação por baixo OD, 
-                             na temperatura de 20°C. \n Usado para o cálculo do Fator de
-                             correção do coeficiente de nitrificação em função do OD.''')
-                elif option == 'koi (1/d)':
-                    st.write('''Coeficiente de conversão do fósforo orgânico a fósforo 
-                             inorgânico, na temperatura de 20°C.''')
-                elif option == 'kspo (1/d)':
-                    st.write('''Coeficiente de sedimentação do fósforo orgânico
-                             , na temperatura de 20°C.''')
-                elif option == 'spinorg (1/d)':
-                    st.write('''Fluxo de liberação de fósforo inorgânico pelo sedimento 
-                             de fundo, na temperatura de 20°C.''')
-                elif option == 'kb (1/d)':
-                    st.write('''Coeficiente de decaimento de coliforme, na temperatura de 20°C.''')
-                else:
-                    st.text('''ERRO''')
-        else:
-            col_2.warning('''Adicionar ou a **Latitude e Longitude** ou o **Comprimento**.''',
+        col_21.warning('''Adicionar ou a **Latitude e Longitude** ou o **Comprimento**.''',
                              icon="❕")
-        expander.divider()
+
         expander.markdown(":green[Variáveis do " + str(labels[i]) +":]")
-        col_11, col_21 = expander.columns(2)
+        coef = []
+        
         n_pontos = col_11.number_input(
             str(i) + '. Quantidade de ponto que alteram os valores'
             + ' de um ou mais coeficientes tabelados:',
             min_value=0, value=qt_coe, disabled=disab)
-        df_coef = pd.DataFrame({str(i) + '. Descrição': list_name})        
+        lista_n_pontos.append(n_pontos)
+        df_coef = pd.DataFrame({str(i) + '. Descrição': list_name_c})
+        labels_c = []  
         for k in range(n_pontos + 1):
+            labels_c.append(str(i) + '. Ponto ' + str(k))
             if data != False:
-                df_coef['Ponto ' + str(k)] = data['Coeficientes'][0][i+1][k]
+                df_coef['Ponto ' + str(k)] = data['Coeficientes'][0][i+1][0][k]
 
             else:
-                df_coef['Ponto ' + str(k)] = list_valores
+                df_coef['Ponto ' + str(k)] = list_valores_c
         df_coef_f = expander.data_editor(df_coef, disabled=[str(i) + '. Descrição'])
-        coef = []
-        for k in range(n_pontos + 1):
-            coef.append(list(df_coef_f['Ponto ' + str(k)]))
+
+
+        tabs_c = expander.tabs(labels_c)
+        for tc in range(len(labels_c)):
+            if lista_modelagem[7]:
+                list_name_c2 = ['Data', str(i) + '.' + str(tc) +'. Temperatura (°C)']
+            else:
+                list_name_c2 = [str(i) + '.' + str(tc) +'. Temperatura (°C)']
+            list_valores_c2 = [[22.0]]
+            if lista_modelagem[1]:
+                list_name_c2.append('k2 (1/d)')
+                list_valores_c2.append([0.0])
+            if lista_modelagem[0]:
+                list_name_c2.extend(['k1 (1/d)',
+                                'kd (1/d)',
+                                'ks (1/d)',
+                                'lrd (gDBO5/m.d)',
+                                'sd (1/d)'])
+                list_valores_c2.extend([[0.0], [0.0], [0.0], [0.0], [0.0]])
+            if lista_modelagem[0] == True and lista_modelagem[3] == True:
+                list_name_c2.append('O2namon (mgO2/mgNamon oxid)')
+                list_valores_c2.append([0.0])
+            if lista_modelagem[3]:
+                list_name_c2.extend(['koa (1/d)',
+                                'kso (1/d)',
+                                'kan (1/d)',
+                                'Snamon (g/m2.d)',
+                                'knn (1/d)',
+                                'knitr (1/d)'])
+                list_valores_c2.extend([[0.0], [0.0], [0.0], [0.0], [0.0], [0.0]])
+            if lista_modelagem[4]:
+                list_name_c2.extend(['koi (1/d)',
+                                    'kspo (1/d)',
+                                    'spinorg (1/d)'])
+                list_valores_c2.extend([[0.0], [0.0], [0.0]])
+            if lista_modelagem[5]:
+                list_name_c2.append('kb (1/d)')
+                list_valores_c2.append([0.0])
+        
+            df_coef2 = pd.DataFrame(columns=list_name_c2)
+
+            if data != False:
+                list_valores_c2 = data['Coeficientes'][0][i+1][tc][1]
+
+            if lista_modelagem[7] and data == False:
+                l_valor_c = []
+                for id in range(len(list_valores_c2)):
+                    l_valor_c.append(list_valores_c2[id][0])
+                for id2 in range(len(dias)):
+                    soma = [dias[id2]] + l_valor_c
+                    df_coef2.loc[id2] = soma
+            
+            else:
+                for yc in range(len(list_name_c2)):
+                    if yc == 0 and lista_modelagem[7] == True:
+                        df_coef2[list_name_c2[yc]] = dias
+                    else:
+                        df_coef2[list_name_c2[yc]] = list_valores_c2[yc - 1]
+
+            df_coef2_f = tabs_c[tc].data_editor(df_coef2,
+                                            column_config={
+                                                'Data':st.column_config.DateColumn(
+                                                    format="MM.DD.YYYY", step=1),
+                                                },
+                                            disabled=['Data'])
+            list_valores_c2 = []
+            for yf in range(len(list_name_c2)):
+                if yf == 0 and lista_modelagem[7] == True:
+                    pass
+                else:
+                    list_valores_c2.append(list(df_coef2_f[list_name_c2[yf]]))
+            list_c1 = []
+
+            for c1 in list(df_coef_f['Ponto ' + str(tc)]):
+                if c1 != None:
+                    list_c1.append(float(c1))
+                else:
+                    list_c1.append(c1)
+
+            coef.append([list_c1, list_valores_c2])
 
         lista_coeficiente.append(coef)
-        lista_qnt_coef.append(n_pontos)
-    list_coef_f = [lista_coeficiente, lista_qnt_coef]
+    list_coef_f = [lista_coeficiente, lista_n_pontos]
     return list_coef_f
 
 
 ################### RETIRADAS E CONTRIBUIÇÕES #####################
-def fun_contrib_retirad(data, n_tributarios, labels, lista_tabs, list_name, list_valores):
+def fun_contrib_retirad(data, n_tributarios, labels, lista_tabs, list_name, list_valores, lista_modelagem, dias):
 
     list_name_cr = ['ID (opcional)',
                     'Latitude (UTM)',
                     'Longitude (UTM)',
                     'Comprimento (m)']
-    list_valores_cr = [None, None, None, None]
+    list_valores_cr = [None, None, None, 0.0]
+    list_name.pop(0)
+    list_valores.pop(0)
+    if lista_modelagem[7]:
+        list_name.pop(0)
+        list_valores.pop(0)
+
 
     list_retiradas = []
     list_ep = []
@@ -488,22 +593,64 @@ def fun_contrib_retirad(data, n_tributarios, labels, lista_tabs, list_name, list
             n_pontos_r = col4_1.number_input(
                 str(j) + '. Quantidade de ponto de captação:',
                 min_value=1, value=qt_ret, disabled=disab)
-            list_name_ret = list_name_cr + ['Vazão (m³/s)']
-            list_valores_ret = list_valores_cr  + [0.0]
-            dfret = pd.DataFrame({str(j) + '. Variável': list_name_ret})
+            dfret = pd.DataFrame({str(j) + '. R: Variável': list_name_cr})
+            labels_r = []
             for k in range(n_pontos_r):
+                labels_r.append(str(j) + '. Ponto ' + str(k))
                 if data != False:
-                    dfret['Ponto ' + str(k)] = data['Contr e Retir'][0][j][k]
+                    dfret['Ponto ' + str(k)] = data['Contr e Retir'][0][j][0][k]
 
                 else:
-                    dfret['Ponto ' + str(k)] = list_valores_ret
-            df_ret_f = expander.data_editor(dfret, disabled=[str(j) + '. Variável'])
-            for n in range(n_pontos_r):
-                ret.append(list(df_ret_f['Ponto ' + str(n)]))
+                    dfret['Ponto ' + str(k)] = list_valores_cr
+            df_ret_f = expander.data_editor(dfret, disabled=[str(j) + '. R: Variável'])
+
+
+            tabs_r = expander.tabs(labels_r)
+            for tr in range(len(labels_r)):
+                if lista_modelagem[7]:
+                    list_name_r = ['Data', str(j) + '.' + str(tr) +'. Q (m³/s)']
+                else:
+                    list_name_r = [str(j) + '.' + str(tr) +'. Q (m³/s)']
+                    
+                list_valores_r = [[0.0]]
+                df_ret2 = pd.DataFrame(columns=list_name_r)
+
+                if data != False:
+                    list_valores_r = data['Contr e Retir'][1][j][tr][1]
+
+                if lista_modelagem[7] and data == False:
+                    l_valor_r = []
+                    for id in range(len(list_valores_r)):
+                        l_valor_r.append(list_valores_r[id][0])
+                    for id2 in range(len(dias)):
+                        soma = [dias[id2]] + l_valor_r
+                        df_ret2.loc[id2] = soma
+                
+                else:
+                    for yc in range(len(list_name_r)):
+                        if yc == 0 and lista_modelagem[7] == True:
+                            df_ret2[list_name_r[yc]] = dias
+                        else:
+                            df_ret2[list_name_r[yc]] = list_valores_r[yc - 1]
+
+                df_ret2_f = tabs_r[tr].data_editor(df_ret2,
+                                                   column_config={
+                                                       'Data':st.column_config.DateColumn(
+                                                           format="MM.DD.YYYY", step=1),
+                                                           },
+                                                   disabled=['Data'])
+                list_valores_r = []
+                for rf in range(len(list_name_r)):
+                    if rf == 0 and lista_modelagem[7] == True:
+                        pass
+                    else:
+                        list_valores_r.append(list(df_ret2_f[list_name_r[rf]]))    
+
+                ret.append([list(df_ret_f['Ponto ' + str(tr)]), list_valores_r])
 
 
         expander.divider()
-        contr_pontual = expander.checkbox(str(j) + '. Possui algum ponto de **contribuição pontual**.',
+        contr_pontual = expander.checkbox(str(j) + '. Possui algum ponto de **descarga de poluição pontual**.',
                                           value=on_ep, disabled=disab)
         ep = []
         n_pontos_ep = 0
@@ -515,22 +662,65 @@ def fun_contrib_retirad(data, n_tributarios, labels, lista_tabs, list_name, list
             n_pontos_ep = col4_1.number_input(
                 str(j) + '. Quantidade de pontos de entradas pontuais:',
                 min_value=1, value=qt_ep, disabled=disab)
-            list_name_ep = list_name_cr + list_name
-            list_valores_ep = list_valores_cr  + list_valores
-            dfep = pd.DataFrame({str(j) + '. Variável': list_name_ep})
+            dfep = pd.DataFrame({str(j) + '. EP: Variável': list_name_cr})
+            labels_ep = []
             for k in range(n_pontos_ep):
+                labels_ep.append(str(j) + '. Ponto ' + str(k))
                 if data != False:
-                    dfep['Ponto ' + str(k)] = data['Contr e Retir'][1][j][k]
+                    dfep['Ponto ' + str(k)] = data['Contr e Retir'][1][j][0][k]
 
                 else:
-                    dfep['Ponto ' + str(k)] = list_valores_ep
-            df_ep_f = expander.data_editor(dfep, disabled=[str(j) + '. Variável'])
-            for n in range(n_pontos_ep):
-                ep.append(list(df_ep_f['Ponto ' + str(n)]))
+                    dfep['Ponto ' + str(k)] = list_valores_cr
+            df_ep_f = expander.data_editor(dfep, disabled=[str(j) + '. EP: Variável'])
+
+
+            tabs_ep = expander.tabs(labels_ep)
+            for tep in range(len(labels_ep)):
+                if lista_modelagem[7]:
+                    list_name_ep = ['Data', str(j) + '.' + str(tep) +'. Q (m³/s)'] + list_name
+                else:
+                    list_name_ep = [str(j) + '.' + str(tep) +'. Q (m³/s)'] + list_name
+                
+                list_valores_ep = [[0.0]] + list_valores
+                df_ep2 = pd.DataFrame(columns=list_name_ep)
+
+                if data != False:
+                    list_valores_ep = data['Contr e Retir'][1][j][tep][1]
+
+                if lista_modelagem[7] and data == False:
+                    l_valor = []
+                    for id in range(len(list_valores_ep)):
+                        l_valor.append(list_valores_ep[id][0])
+                    for id2 in range(len(dias)):
+                        soma = [dias[id2]] + l_valor
+                        df_ep2.loc[id2] = soma
+                
+                else:
+                    for yc in range(len(list_name_ep)):
+                        if yc == 0 and lista_modelagem[7] == True:
+                            df_ep2[list_name_ep[yc]] = dias
+                        else:
+                            df_ep2[list_name_ep[yc]] = list_valores_ep[yc - 1]
+
+
+                df_ep2_f = tabs_ep[tep].data_editor(df_ep2, 
+                                                   column_config={
+                                                       'Data':st.column_config.DateColumn(
+                                                           format="MM.DD.YYYY", step=1),
+                                                           },
+                                                   disabled=['Data'])
+                list_valores_ep = []
+                for epf in range(len(list_name_ep)):
+                    if epf == 0 and lista_modelagem[7] == True:
+                        pass
+                    else:
+                        list_valores_ep.append(list(df_ep2_f[list_name_ep[epf]]))    
+
+                ep.append([list(df_ep_f['Ponto ' + str(tep)]), list_valores_ep])
 
 
         expander.divider()
-        contr_difusa = expander.checkbox(str(j) + '. Possui algum ponto de **contribuição difusa**.',
+        contr_difusa = expander.checkbox(str(j) + '. Possui algum ponto de **descarga de poluição difusa**.',
                                           value=on_ed, disabled=disab)
         ed = []
         n_pontos_ed = 0
@@ -548,23 +738,64 @@ def fun_contrib_retirad(data, n_tributarios, labels, lista_tabs, list_name, list
                             'Longitude inicial (UTM)',
                             'Longitude final (UTM)',
                             'Comprimento inicial (m)',
-                            'Comprimento final (m)',
-                            'Vazão TOTAL (m³/s)']
-            list_valores_ed = [None, None, None, None, None, None, None]
-            list_name_f = list_name
-            del(list_name_f[0])
-            list_name_ed.extend(list_name_f)
-            list_valores_ed.extend(list_valores)
-            dfed = pd.DataFrame({str(j) + '. Variável': list_name_ed})
+                            'Comprimento final (m)']
+            list_valores_ed = [None, None, None, None, None, 0.0, 0.0]
+            dfed = pd.DataFrame({str(j) + '. ED: Variável': list_name_ed})
+            labels_ed = []
             for k in range(n_pontos_ed):
+                labels_ed.append(str(j) + '. Ponto ' + str(k))
                 if data != False:
-                    dfed['Ponto ' + str(k)] = data['Contr e Retir'][2][j][k]
+                    dfed['Ponto ' + str(k)] = data['Contr e Retir'][2][j][0][k]
 
                 else:
                     dfed['Ponto ' + str(k)] = list_valores_ed
-            df_ed_f = expander.data_editor(dfed, disabled=[str(j) + '. Variável'])
-            for n in range(n_pontos_ed):
-                ed.append(list(df_ed_f['Ponto ' + str(n)]))
+            df_ed_f = expander.data_editor(dfed, disabled=[str(j) + '. ED: Variável'])
+
+
+            tabs_ed = expander.tabs(labels_ed)
+            for ted in range(len(labels_ed)):
+                if lista_modelagem[7]:
+                    list_name_ed = ['Data', str(j) + '.' + str(ted) +'. Q TOTAL (m³/s)'] + list_name
+                else:
+                    list_name_ed = [str(j) + '.' + str(ted) +'. Q TOTAL (m³/s)'] + list_name
+
+                list_valores_ed = [[0.0]] + list_valores
+                df_ed2 = pd.DataFrame(columns=list_name_ed)
+
+                if data != False:
+                    list_valores_ed = data['Contr e Retir'][2][j][ted][1]
+
+                if lista_modelagem[7] and data == False:
+                    l_valor_ed = []
+                    for id in range(len(list_valores_ed)):
+                        l_valor_ed.append(list_valores_ed[id][0])
+                    for id2 in range(len(dias)):
+                        soma = [dias[id2]] + l_valor_ed
+                        df_ed2.loc[id2] = soma
+                
+                else:
+                    for yc in range(len(list_name_ed)):
+                        if yc == 0 and lista_modelagem[7] == True:
+                            df_ed2[list_name_ed[yc]] = dias
+                        else:
+                            df_ed2[list_name_ed[yc]] = list_valores_ed[yc - 1]
+                
+
+                df_ed2_f = tabs_ed[ted].data_editor(df_ed2,
+                                                   column_config={
+                                                       'Data':st.column_config.DateColumn(
+                                                           format="MM.DD.YYYY", step=1),
+                                                           },
+                                                   disabled=['Data'])
+                list_valores_ed = []
+                for edf in range(len(list_name_ed)):
+                    if edf == 0 and lista_modelagem[7] == True:
+                        pass
+                    else:
+                        list_valores_ed.append(list(df_ed2_f[list_name_ed[edf]]))    
+
+                ed.append([list(df_ed_f['Ponto ' + str(ted)]), list_valores_ed])
+
         expander.divider()
         list_retiradas.append(ret)
         list_ep.append(ep)

@@ -1,6 +1,7 @@
 import numpy as np
 import scipy.optimize as opt
 import copy
+import streamlit as st
 
 ##########################################################################################################
 # OBJETOS
@@ -32,8 +33,8 @@ class EntradaPontual:
         self.longitude = long
         self.comprimento = comp
         self.concentracoes = c_gerais
-        self.descricao = descricao
         self.vazao = vazao
+        self.descricao = descricao
         self.rio = rio
 
 
@@ -148,14 +149,14 @@ def lista_hidr(longitude, latitude, altitude, comprimento, discretizacao):
                                     None, None, None, None, None, None, None, None)
             lista_hidraulica.append(copy.deepcopy(hidraulica))
 
-    # ERRO!!!!!!!!!!!!!!- Inclinação
+    # Inclinação
     for i in range(len(lista_hidraulica)):
         if i != (len(lista_hidraulica) - 1):
             incl = (lista_hidraulica[i].altitude
                     - lista_hidraulica[i+1].altitude)/ discretizacao
             if incl <= 0:
                 if i == 0:
-                    incl = 0.0001
+                    incl = 0.00001
                 else:
                     incl = lista_hidraulica[i - 1].inclinacao
         lista_hidraulica[i].inclinacao = np.abs(incl)
@@ -164,7 +165,6 @@ def lista_hidr(longitude, latitude, altitude, comprimento, discretizacao):
 
 
 def func_hidraulica(lista_hidraulica, lista_s_pontual, lista_e_pontual, lista_e_difusa, lista_s_transversal, discretizacao):
-
     vazao_atual = 0
     lista_final = []
     a_esq = lista_s_transversal[0].ang_esquerdo
@@ -206,23 +206,28 @@ def func_hidraulica(lista_hidraulica, lista_s_pontual, lista_e_pontual, lista_e_
                                 lista_s_transversal[m].rugosidade_n)
         
         for _ in range(len(lista_s_transversal)):
-            funcao_1 = (vazao_atual * rug) / np.sqrt(lista_hidraulica[i].inclinacao)
-            funcao_2 = lambda y : (((((2 * l_rio + (y / np.tan(a_esq * np.pi / 180)) + (y / np.tan(a_dir * np.pi / 180))) * (y / 2)) ** (5/3)) / (
-                ((y / np.sin(a_esq * np.pi / 180)) + (y / np.sin(a_dir * np.pi / 180)) + l_rio) ** (2/3))) - funcao_1)
-            prof = opt.bisect(funcao_2, 0,500)
-            nivel_dagua = lista_hidraulica[i].altitude + prof
-            area = ((2 * l_rio + (prof / np.tan(a_esq * np.pi / 180)) + (prof / np.tan(a_dir * np.pi / 180))) * (prof / 2))
+            list_profundidade = []
+            for iq in range(len(vazao_atual)):
+                funcao_1 = (vazao_atual[iq] * rug) / np.sqrt(lista_hidraulica[i].inclinacao)
+                funcao_2 = lambda y : (((((2 * l_rio + (y / np.tan(a_esq * np.pi / 180)) + (y / np.tan(a_dir * np.pi / 180))) * (y / 2)) ** (5/3)) / (
+                    ((y / np.sin(a_esq * np.pi / 180)) + (y / np.sin(a_dir * np.pi / 180)) + l_rio) ** (2/3))) - funcao_1)
+                prof = opt.bisect(funcao_2, 0,500)
+                list_profundidade.append(prof)
+            
+            list_profundidade = np.array(list_profundidade)
+            nivel_dagua = lista_hidraulica[i].altitude + list_profundidade
+            area = ((2 * l_rio + (list_profundidade / np.tan(a_esq * np.pi / 180)) + (list_profundidade / np.tan(a_dir * np.pi / 180))) * (list_profundidade / 2))
             veloc = vazao_atual / area
             tensao_c = 9810 * lista_hidraulica[i].inclinacao * (area / (
-                (prof / np.sin(a_esq * np.pi / 180)) + (prof / np.sin(a_dir * np.pi / 180)) + l_rio))
-            froude = veloc / (np.sqrt(9.81 * prof))
+                (list_profundidade / np.sin(a_esq * np.pi / 180)) + (list_profundidade / np.sin(a_dir * np.pi / 180)) + l_rio))
+            froude = veloc / (np.sqrt(9.81 * list_profundidade))
 
         lista_hidraulica[i].vazao = vazao_atual
         lista_hidraulica[i].ang_esquerdo = a_esq
         lista_hidraulica[i].ang_direito = a_dir
         lista_hidraulica[i].rugosidade_n = rug
         lista_hidraulica[i].largura_rio = l_rio
-        lista_hidraulica[i].profundidade = prof
+        lista_hidraulica[i].profundidade = list_profundidade
         lista_hidraulica[i].nivel_dagua = nivel_dagua
         lista_hidraulica[i].velocidade = veloc
         lista_hidraulica[i].tensao_c = tensao_c
@@ -235,7 +240,7 @@ def func_hidraulica(lista_hidraulica, lista_s_pontual, lista_e_pontual, lista_e_
 
 
 def k2(hidraulica):
-
+    
     if 0.1 <= hidraulica.profundidade < 4 and 0.05 <= hidraulica.velocidade < 1.6:
         if 0.6 <= hidraulica.profundidade < 4 and 0.05 <= hidraulica.velocidade < 0.8:
             k_2 = 3.73 * (hidraulica.velocidade ** 0.5) * (hidraulica.profundidade ** -1.5)
@@ -250,7 +255,6 @@ def k2(hidraulica):
             k_2 = 15.4 * hidraulica.velocidade * hidraulica.inclinacao
     else:
         k_2 = 20.74 * (hidraulica.vazao ** -0.42)
-
     return k_2
 
 
@@ -260,24 +264,29 @@ def mistura(parametro, e_paramentro, vazao, e_vazao):
 
 
 def od(tempo_delta, coeficientes, concentracoes, hidraulica, f_nitr, od_saturacao, anaerobiose):
-    
-    if anaerobiose:
-        conc_od = 0
-    
-    else:
-        k_t = 1 / (1 - np.exp(-5 * (coeficientes.k_1 * (1.047 ** (coeficientes.temperatura - 20)))))
-        k_r = (coeficientes.k_d * (1.047 ** (coeficientes.temperatura - 20))
-               ) + (coeficientes.k_s * (1.024 ** (coeficientes.temperatura - 20)))
-        conc = (coeficientes.k_2 * (1.024 ** (coeficientes.temperatura - 20)) * (od_saturacao - concentracoes.conc_od)
-                ) - (k_r * k_t * concentracoes.conc_dbo
-                     ) - (coeficientes.r_o2_amon * f_nitr * concentracoes.conc_n_amon * coeficientes.k_an * (1.08 ** (coeficientes.temperatura - 20))
-                          ) - (coeficientes.s_d * (1.06 ** (coeficientes.temperatura - 20)) / hidraulica.profundidade)
-        conc_od = concentracoes.conc_od + (tempo_delta * conc)
 
-        if conc_od <= 0:
-            anaerobiose = True
+    lista_c_od = []
+    for iod in range(len(anaerobiose)):
+        
+        if anaerobiose[iod]:
             conc_od = 0
-    return conc_od, anaerobiose
+        
+        else:
+            k_t = 1 / (1 - np.exp(-5 * (coeficientes.k_1[iod] * (1.047 ** (coeficientes.temperatura[iod] - 20)))))
+            k_r = (coeficientes.k_d[iod] * (1.047 ** (coeficientes.temperatura[iod] - 20))
+                   ) + (coeficientes.k_s[iod] * (1.024 ** (coeficientes.temperatura[iod] - 20)))     
+            conc = (coeficientes.k_2[iod] * (1.024 ** (coeficientes.temperatura[iod] - 20)) * (od_saturacao[iod] - concentracoes.conc_od[iod])
+                    ) - (k_r * k_t * concentracoes.conc_dbo[iod]
+                        ) - (coeficientes.r_o2_amon[iod] * f_nitr[iod] * concentracoes.conc_n_amon[iod] * coeficientes.k_an[iod] * (1.08 ** (coeficientes.temperatura[iod] - 20))
+                            ) - (coeficientes.s_d[iod] * (1.06 ** (coeficientes.temperatura[iod] - 20)) / hidraulica.profundidade[iod])
+            conc_od = concentracoes.conc_od[iod] + (tempo_delta[iod] * conc)
+
+            if conc_od <= 0:
+                anaerobiose[iod] = True
+                conc_od = 0
+        lista_c_od.append(conc_od)
+        
+    return lista_c_od, anaerobiose
 
 
 def dbo(tempo_delta, coeficientes, concentracoes, hidraulica, anaerobiose):
@@ -293,18 +302,21 @@ def dbo(tempo_delta, coeficientes, concentracoes, hidraulica, anaerobiose):
     conc = (- k_r * concentracoes.conc_dbo) + (coeficientes.l_rd / (hidraulica.profundidade * hidraulica.largura_rio))
     conc_dbo_aerobio = concentracoes.conc_dbo + (tempo_delta * conc)
 
-    if anaerobiose:
-        conc_ana = - (coeficientes.k_2 * (1.024 ** (coeficientes.temperatura - 20)) * od_saturacao)
-        conc_dbo_anaerobio = concentracoes.conc_dbo + (tempo_delta * conc_ana)
-        if abs(conc_dbo_anaerobio - conc_dbo_aerobio) <= 0.001:
-            anaerobiose = False
-            conc_dbo = conc_dbo_aerobio
+    lista_c_dbo = []
+    for idbo in range(len(anaerobiose)):
+        if anaerobiose[idbo]:
+            conc_ana = - (coeficientes.k_2[idbo] * (1.024 ** (coeficientes.temperatura[idbo] - 20)) * od_saturacao[idbo])
+            conc_dbo_anaerobio = concentracoes.conc_dbo[idbo] + (tempo_delta[idbo] * conc_ana[idbo])
+            if abs(conc_dbo_anaerobio - conc_dbo_aerobio[idbo]) <= 0.001:
+                anaerobiose[idbo] = False
+                conc_dbo = conc_dbo_aerobio[idbo]
+            else:
+                conc_dbo = conc_dbo_anaerobio
         else:
-            conc_dbo = conc_dbo_anaerobio
-    else:
-        conc_dbo = conc_dbo_aerobio
+            conc_dbo = conc_dbo_aerobio[idbo]
+        lista_c_dbo.append(conc_dbo)
 
-    return conc_dbo, od_saturacao, anaerobiose
+    return lista_c_dbo, od_saturacao, anaerobiose
 
 
 def no(tempo_delta, coeficientes, concentracoes):
@@ -357,7 +369,7 @@ def e_coli(tempo_delta, coeficientes, concentracoes):
 
 def modelagem(lista_final, lista_e_coeficientes, lista_s_pontual, lista_e_pontual,
               lista_e_difusa, rio, discretizacao, lista_modelagem):
-    anaerobiose = False
+    anaerobiose = [False] * len(lista_e_pontual[0].vazao)
     vazao = 0
     concentracoes = Concentracoes(None, None, None, None, None, None, None, None, None, None)
     coeficientes = Coeficientes(None, None, None, None, None, None, None, None, None, None,
@@ -371,12 +383,11 @@ def modelagem(lista_final, lista_e_coeficientes, lista_s_pontual, lista_e_pontua
             if atual.comprimento == hidraulica.comprimento:
                 k_2_calculavel = atual.coeficientes.k_2_calculavel
                 k_2_max = atual.coeficientes.k_2_max
-                k_2 = atual.coeficientes.k_2
-                if lista_modelagem[0]:
-                    if k_2_calculavel:
-                        k_2 = k2(lista_final[0].hidraulica)
-                        if k_2 > atual.coeficientes.k_2_max:
-                            k_2 = atual.coeficientes.k_2_max
+                if lista_modelagem[0] == True and k_2_calculavel == True:
+                    k_2 = np.array(k2(lista_final[0].hidraulica))
+                    k_2 = np.where(k_2 > atual.coeficientes.k_2_max, atual.coeficientes.k_2_max, k_2)
+                else:
+                    k_2 = atual.coeficientes.k_2
                 temperatura = atual.coeficientes.temperatura
                 k_1 = atual.coeficientes.k_1
                 s_d = atual.coeficientes.s_d
@@ -494,51 +505,62 @@ def modelagem(lista_final, lista_e_coeficientes, lista_s_pontual, lista_e_pontua
         lista_final[i].rio = rio
     return lista_final
 
-    
-def modelagem_Final(lista_rio, ponto_af, lista_modelagem):
-    lista_afluente = []
-    lista_completa_final = []
-    for i in range(len(lista_rio)):
-        dados = lista_rio[i]
-        if dados.rio != 0:
-            lista_hidr_model = func_hidraulica(dados.lista_hidraulica, dados.lista_s_pontual,
-                                               dados.lista_e_pontual, dados.lista_e_difusa,
-                                               dados.lista_s_transversal, dados.discretizacao)
-            lista_final = modelagem(lista_hidr_model, dados.lista_e_coeficientes, dados.lista_s_pontual,
-                                    dados.lista_e_pontual, dados.lista_e_difusa, dados.rio,
-                                    dados.discretizacao, lista_modelagem)
-            afluente = EntradaPontual(ponto_af[i][1], ponto_af[i][2],
-                                    ponto_af[i][3], lista_final[-1].concentracoes,
-                                    lista_final[-1].hidraulica.vazao, ponto_af[i][0], lista_final[-1].rio)
-            lista_afluente.append(copy.deepcopy(afluente))
+
+def menor_dist(list_lat, list_long, list_comp, lat_af, long_af, comp_af):
+    dist_ant = 10 ** 50
+
+    for k in range(len(list_lat)):
+        if str(lat_af) != 'None' and str(lat_af) != 'nan':
+            distancia = fun_hipotenusa(lat_af, list_lat[k],
+                                        long_af, list_long[k])
         else:
-            if len(lista_rio) > 1:
-                for j in range(len(lista_afluente)):
-                    dist_ant = 10 ** 50
-                    if str(lista_afluente[j].latitude) != 'nan':
-                        for k in range(len(dados.lista_hidraulica)):
-                            distancia = fun_hipotenusa(lista_afluente[j].latitude, dados.lista_hidraulica[k].latitude,
-                                                       lista_afluente[j].longitude, dados.lista_hidraulica[k].longitude)
-                            if distancia <= dist_ant:
-                                comp = dados.lista_hidraulica[k].comprimento
-                                dist_ant = distancia
-                    else:
-                        for k in range(len(dados.lista_hidraulica)):
-                            distancia = abs(lista_afluente[j].comprimento - dados.lista_hidraulica[k].comprimento)
-                            if distancia <= dist_ant:
-                                comp = dados.lista_hidraulica[k].comprimento
-                                dist_ant = distancia
-                lista_afluente[j].comprimento = comp
-                add = dados.lista_e_pontual
-                add.append(copy.deepcopy(lista_afluente[j]))
-            else:
-                add = dados.lista_e_pontual
-            lista_hidr_model = func_hidraulica(dados.lista_hidraulica, dados.lista_s_pontual,
-                                               add, dados.lista_e_difusa,
-                                               dados.lista_s_transversal, dados.discretizacao)
-            lista_final = modelagem(lista_hidr_model, dados.lista_e_coeficientes, dados.lista_s_pontual,
-                                    add, dados.lista_e_difusa, dados.rio,
-                                    dados.discretizacao, lista_modelagem)
-        lista_completa_final.append(lista_final)
-    return lista_completa_final, add
+            distancia = abs(comp_af - list_comp[k])
+        if distancia <= dist_ant:
+            comp = list_comp[k]
+            dist_ant = distancia
+    
+    return comp
+
+
+def menor_dist2(dados_desague, lat_af, long_af, comp_af):
+    dist_ant = 10 ** 50
+
+    for k in range(len(dados_desague.lista_hidraulica)):
+        if str(lat_af) != 'None' and str(lat_af) != 'nan':
+            distancia = fun_hipotenusa(lat_af, dados_desague.lista_hidraulica[k].latitude,
+                                        long_af, dados_desague.lista_hidraulica[k].longitude)
+        else:
+            distancia = abs(comp_af - dados_desague.lista_hidraulica[k].comprimento)
+        if distancia <= dist_ant:
+            comp = dados_desague.lista_hidraulica[k].comprimento
+            dist_ant = distancia
+    
+    return comp
+
+
+def modelagem_Final(lista_rio, ponto_af, lista_modelagem,
+                    ordem_desague, ordem_modelagem):
+    
+    lista_completa_final = []
+    for ior in ordem_modelagem:
+        dados = lista_rio[ior]
+        lista_hidr_model = func_hidraulica(dados.lista_hidraulica, dados.lista_s_pontual,
+                                            dados.lista_e_pontual, dados.lista_e_difusa,
+                                            dados.lista_s_transversal, dados.discretizacao)
+        lista_final = modelagem(lista_hidr_model, dados.lista_e_coeficientes, dados.lista_s_pontual,
+                                dados.lista_e_pontual, dados.lista_e_difusa, dados.rio,
+                                dados.discretizacao, lista_modelagem)
+        
+        if ior != 0:
+            comp = menor_dist2(lista_rio[ordem_desague[ior - 1]], ponto_af[ior - 1][1],
+                               ponto_af[ior - 1][2], ponto_af[ior - 1][3])
+
+            afluente = EntradaPontual(ponto_af[ior - 1][1], ponto_af[ior - 1][2],
+                                      comp, lista_final[-1].concentracoes,
+                                      lista_final[-1].hidraulica.vazao, ponto_af[ior - 1][0], lista_final[-1].rio)
+            
+            lista_rio[ordem_desague[ior - 1]].lista_e_pontual.append(copy.deepcopy(afluente))
+        
+        lista_completa_final.append(copy.deepcopy(lista_final))
+    return lista_completa_final, lista_rio[0].lista_e_pontual
 

@@ -7,39 +7,41 @@ import copy
 
 def modelagem(selected, menu):
     if selected == menu[2]:
-        st.markdown('#### Modelagem com os coeficientes definidos'
-                    + ' :orange[manualmente]:')
+        st.markdown('#### Modelagem com os'
+                    + ' :orange[coeficientes predefinidos]:')
 
-        paramentro = [True, False, True, True, True, True, 0]
+        paramentro = [True, False, True, True, True, True, 0, True]
         lista_modelagem, data, labels, lista_tabs = inicio(paramentro)
-        n_trib = lista_modelagem[-1]
+        n_trib = lista_modelagem[6]
 
 
-        lista_parametros, list_name, list_valores, zona, hemisferio = dados_iniciais(data, lista_modelagem, n_trib,
+        lista_parametros, list_name, list_valores, zona, hemisferio, dias = dados_iniciais(data, lista_modelagem, n_trib,
                                         labels, lista_tabs)
         
         list_name_salvo = copy.deepcopy(list_name)
-        ponto_af = lista_parametros[-1]
+        ponto_af = lista_parametros[8]
+        ordem_desague = lista_parametros[9]
 
         lista_coeficientes = coeficientes(data, lista_modelagem, n_trib,
-                                        labels, lista_tabs)
+                                        labels, lista_tabs, dias)
 
-        lista_contr_retir = fun_contrib_retirad(data, n_trib, labels, lista_tabs, list_name, list_valores)
+        lista_contr_retir = fun_contrib_retirad(data, n_trib, labels, lista_tabs, list_name, list_valores, lista_modelagem, dias)
 
         salvararquivo(lista_modelagem, lista_parametros, lista_coeficientes, lista_contr_retir, list_name_salvo, list_valores)
 
+
         # botão
         botao = st.button(
-            'Clique aqui para rodar a modelagem',
+            'Clique aqui para iniciar a modelagem',
             type='primary')
 
         if botao:
             list_tranfor = transformacao(lista_modelagem, lista_parametros, lista_coeficientes,
-                                        lista_contr_retir, list_name)
+                                        lista_contr_retir, list_name_salvo)
             
-            lidt_df, list_entr  = resultados(n_trib, list_tranfor, ponto_af, lista_modelagem)
+            lidt_df, list_entr, ordem_modelagem  = resultados(n_trib, list_tranfor, ponto_af, lista_modelagem, ordem_desague, dias)
 
-            plotar(n_trib, lista_modelagem, lidt_df, list_entr, labels, zona, hemisferio)
+            plotar(n_trib, lista_modelagem, lidt_df, list_entr, labels, zona, hemisferio, dias, ordem_modelagem)
 
             
     return
