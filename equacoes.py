@@ -136,7 +136,8 @@ def lista_hidr(longitude, latitude, altitude, comprimento, discretizacao):
             lista_hidraulica.append(copy.deepcopy(hidraulica))
     else:
         intervalos = list(np.arange(0, (comprimento[-1] + discretizacao), discretizacao))
-
+        lat = [None]
+        long = [None]
         lista_hidraulica= []
 
         for i in range(len(intervalos)):
@@ -290,23 +291,24 @@ def od(tempo_delta, coeficientes, concentracoes, hidraulica, f_nitr, od_saturaca
 
 
 def dbo(tempo_delta, coeficientes, concentracoes, hidraulica, anaerobiose):
+    import streamlit as st
 
     od_saturacao = (1 - (hidraulica.altitude/9450)) * (
         14.652 - (4.1022 * (10 ** -1) * coeficientes.temperatura)
         + (7.991 * (10 ** -3) * (coeficientes.temperatura ** 2))
         - (7.7774 * (10 ** -5) * (coeficientes.temperatura ** 3)))
 
+    
     k_r = (coeficientes.k_d * (1.047 ** (coeficientes.temperatura - 20))
            ) + (coeficientes.k_s * (1.024 ** (coeficientes.temperatura - 20)))
     
     conc = (- k_r * concentracoes.conc_dbo) + (coeficientes.l_rd / (hidraulica.profundidade * hidraulica.largura_rio))
     conc_dbo_aerobio = concentracoes.conc_dbo + (tempo_delta * conc)
-
     lista_c_dbo = []
     for idbo in range(len(anaerobiose)):
         if anaerobiose[idbo]:
             conc_ana = - (coeficientes.k_2[idbo] * (1.024 ** (coeficientes.temperatura[idbo] - 20)) * od_saturacao[idbo])
-            conc_dbo_anaerobio = concentracoes.conc_dbo[idbo] + (tempo_delta[idbo] * conc_ana[idbo])
+            conc_dbo_anaerobio = concentracoes.conc_dbo[idbo] + (tempo_delta[idbo] * conc_ana)
             if abs(conc_dbo_anaerobio - conc_dbo_aerobio[idbo]) <= 0.001:
                 anaerobiose[idbo] = False
                 conc_dbo = conc_dbo_aerobio[idbo]
@@ -314,7 +316,9 @@ def dbo(tempo_delta, coeficientes, concentracoes, hidraulica, anaerobiose):
                 conc_dbo = conc_dbo_anaerobio
         else:
             conc_dbo = conc_dbo_aerobio[idbo]
+            
         lista_c_dbo.append(conc_dbo)
+    lista_c_dbo = np.array(lista_c_dbo)
 
     return lista_c_dbo, od_saturacao, anaerobiose
 

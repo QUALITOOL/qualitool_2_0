@@ -220,8 +220,8 @@ def dados_iniciais(data, lista_modelagem, n_tributarios, labels, lista_tabs):
             col1, col2 = expander.columns(2)
             coln1, coln2 = col1.columns(2)
             if data != False:
-                id_hmf = data['Dados gerais'][11][i]
-                zona_dt = data['Dados gerais'][10][i]
+                id_hmf = data['Dados gerais'][11]
+                zona_dt = data['Dados gerais'][10]
 
             else:
                 zona_dt = 22
@@ -509,10 +509,13 @@ def coeficientes(data, lista_modelagem, n_tributarios, labels, lista_tabs, dias)
             
             else:
                 for yc in range(len(list_name_c2)):
-                    if yc == 0 and lista_modelagem[7] == True:
-                        df_coef2[list_name_c2[yc]] = dias
+                    if lista_modelagem[7] == True:
+                        if yc == 0:
+                            df_coef2[list_name_c2[yc]] = dias
+                        else:
+                            df_coef2[list_name_c2[yc]] = list_valores_c2[yc - 1]
                     else:
-                        df_coef2[list_name_c2[yc]] = list_valores_c2[yc - 1]
+                        df_coef2[list_name_c2[yc]] = list_valores_c2[yc]
 
             df_coef2_f = tabs_c[tc].data_editor(df_coef2,
                                             column_config={
@@ -628,10 +631,13 @@ def fun_contrib_retirad(data, n_tributarios, labels, lista_tabs, list_name, list
                 
                 else:
                     for yc in range(len(list_name_r)):
-                        if yc == 0 and lista_modelagem[7] == True:
-                            df_ret2[list_name_r[yc]] = dias
+                        if lista_modelagem[7] == True:
+                            if yc == 0:
+                                df_ret2[list_name_r[yc]] = dias
+                            else:
+                                df_ret2[list_name_r[yc]] = list_valores_r[yc - 1]
                         else:
-                            df_ret2[list_name_r[yc]] = list_valores_r[yc - 1]
+                            df_ret2[list_name_r[yc]] = list_valores_r[yc]
 
                 df_ret2_f = tabs_r[tr].data_editor(df_ret2,
                                                    column_config={
@@ -697,10 +703,13 @@ def fun_contrib_retirad(data, n_tributarios, labels, lista_tabs, list_name, list
                 
                 else:
                     for yc in range(len(list_name_ep)):
-                        if yc == 0 and lista_modelagem[7] == True:
-                            df_ep2[list_name_ep[yc]] = dias
+                        if lista_modelagem[7] == True:
+                            if yc == 0:
+                                df_ep2[list_name_ep[yc]] = dias
+                            else:
+                                df_ep2[list_name_ep[yc]] = list_valores_ep[yc - 1]
                         else:
-                            df_ep2[list_name_ep[yc]] = list_valores_ep[yc - 1]
+                            df_ep2[list_name_ep[yc]] = list_valores_ep[yc]
 
 
                 df_ep2_f = tabs_ep[tep].data_editor(df_ep2, 
@@ -775,10 +784,13 @@ def fun_contrib_retirad(data, n_tributarios, labels, lista_tabs, list_name, list
                 
                 else:
                     for yc in range(len(list_name_ed)):
-                        if yc == 0 and lista_modelagem[7] == True:
-                            df_ed2[list_name_ed[yc]] = dias
+                        if lista_modelagem[7] == True:
+                            if yc == 0:
+                                df_ed2[list_name_ed[yc]] = dias
+                            else:
+                                df_ed2[list_name_ed[yc]] = list_valores_ed[yc - 1]
                         else:
-                            df_ed2[list_name_ed[yc]] = list_valores_ed[yc - 1]
+                            df_ed2[list_name_ed[yc]] = list_valores_ed[yc]
                 
 
                 df_ed2_f = tabs_ed[ted].data_editor(df_ed2,

@@ -158,6 +158,21 @@ def transformacao(lista_modelagem, lista_parametros, lista_coeficiente,
 
     for i in range(lista_modelagem[6] + 1):
 
+        hidraulica = (lista_hidr(lista_parametros[2][i],
+                                 lista_parametros[3][i],
+                                 lista_parametros[4][i],
+                                 lista_parametros[1][i],
+                                 lista_parametros[6][i]))
+        
+        lat_dis = []
+        long_dis = []
+        comp_dis = []
+        for llc in range(len(hidraulica)):
+            lat_dis.append(hidraulica[llc].latitude)
+            long_dis.append(hidraulica[llc].longitude)
+            comp_dis.append(hidraulica[llc].comprimento)
+
+
         coeficiente = []
         for k in range(lista_coeficiente[1][i] + 1):
             k2_calc = False if lista_modelagem[1] else True
@@ -194,25 +209,23 @@ def transformacao(lista_modelagem, lista_parametros, lista_coeficiente,
             if lista_modelagem[5]:
                 coef.k_b = np.array(lista_coeficiente[0][i + 1][k][1][lista_coeficiente[0][0].index('kb (1/d)')])
 
-            comp_C = menor_dist(lista_parametros[3][i], lista_parametros[2][i],
-                                lista_parametros[1][i], lista_coeficiente[0][i + 1][k][0][0],
+            comp_C = menor_dist(lat_dis, long_dis,
+                                comp_dis, lista_coeficiente[0][i + 1][k][0][0],
                                 lista_coeficiente[0][i + 1][k][0][1], lista_coeficiente[0][i + 1][k][0][2])
-
 
             coeficiente.append(copy.deepcopy(CoeficientesEntrada(lista_coeficiente[0][i + 1][k][0][0],
                                                                  lista_coeficiente[0][i + 1][k][0][1],
                                                                  comp_C,
                                                                  copy.deepcopy(coef),
                                                                  i)))
-
-        
-        
+    
         
         geometria = []
         for j in range(lista_parametros[7][i] + 1):
-            comp_g = menor_dist(lista_parametros[3][i], lista_parametros[2][i],
-                                lista_parametros[1][i], lista_parametros[5][i][j][0],
+            comp_g = menor_dist(lat_dis, long_dis,
+                                comp_dis, lista_parametros[5][i][j][0],
                                 lista_parametros[5][i][j][1], lista_parametros[5][i][j][2])
+            
             geometria.append(copy.deepcopy(SeccaoTransversal(lista_parametros[5][i][j][0],
                                                              lista_parametros[5][i][j][1],
                                                              comp_g,
@@ -222,11 +235,6 @@ def transformacao(lista_modelagem, lista_parametros, lista_coeficiente,
                                                              lista_parametros[5][i][j][6])))
         
 
-        hidraulica = (lista_hidr(lista_parametros[2][i],
-                                 lista_parametros[3][i],
-                                 lista_parametros[4][i],
-                                 lista_parametros[1][i],
-                                 lista_parametros[6][i]))
         
         conc = Concentracoes(None, None, None, None, None,
                              None, None, None, None, None)
@@ -235,38 +243,29 @@ def transformacao(lista_modelagem, lista_parametros, lista_coeficiente,
         if lista_modelagem[0]:
             id_od = list_name.index('OD (mg/L)')
             conc.conc_od = np.array(lista_parametros[0][i][id_od])
-            id_od -= 1
             id_dbo = list_name.index('DBO (mg/L)')
             conc.conc_dbo = np.array(lista_parametros[0][i][id_dbo])
-            id_dbo -= 1
         if lista_modelagem[3]:
             id_no = list_name.index('N-org (mg/L)')
             conc.conc_no = np.array(lista_parametros[0][i][id_no])
-            id_no -= 1
             id_n_amon = list_name.index('N-amon (mg/L)')
             conc.conc_n_amon = np.array(lista_parametros[0][i][id_n_amon])
-            id_n_amon -= 1
             id_nitrito = list_name.index('N-nitri (mg/L)')
             conc.conc_nitrito = np.array(lista_parametros[0][i][id_nitrito])
-            id_nitrito -= 1
             id_nitrato = list_name.index('N-nitra (mg/L)')
             conc.conc_nitrato = np.array(lista_parametros[0][i][id_nitrato])
-            id_nitrato -= 1
         if lista_modelagem[4]:
             id_p_org = list_name.index('P-org (mg/L)')
             conc.conc_p_org = np.array(lista_parametros[0][i][id_p_org])
-            id_p_org -= 1
             id_p_inorg = list_name.index('P-inorg (mg/L)')
             conc.conc_p_inorg = np.array(lista_parametros[0][i][id_p_inorg])
-            id_p_inorg -= 1
             conc.conc_p_total = conc.conc_p_org + conc.conc_p_inorg
         if lista_modelagem[5]:
             id_e_coli = list_name.index('E-coli (NMP/100ml)')
             conc.conc_e_coli = np.array(lista_parametros[0][i][id_e_coli])
-            id_e_coli -= 1
 
-        id_q = 1 if lista_modelagem[7] else 0
-
+        id = 1 if lista_modelagem[7] else 0
+        id_q = id
                 
         conc_ep = [copy.deepcopy(EntradaPontual(lista_parametros[3][i][0],
                                                 lista_parametros[2][i][0],
@@ -298,8 +297,8 @@ def transformacao(lista_modelagem, lista_parametros, lista_coeficiente,
                 if lista_modelagem[5]:
                     conc.conc_e_coli = np.array(lista_contr_retir[1][i][p][1][id_e_coli])
 
-                comp_ep = menor_dist(lista_parametros[3][i], lista_parametros[2][i],
-                                     lista_parametros[1][i], lista_contr_retir[1][i][p][0][1],
+                comp_ep = menor_dist(lat_dis, long_dis,
+                                     comp_dis, lista_contr_retir[1][i][p][0][1],
                                      lista_contr_retir[1][i][p][0][2], lista_contr_retir[1][i][p][0][3])
                 
                 conc_ep.append(copy.deepcopy(EntradaPontual(lista_contr_retir[1][i][p][0][1],
@@ -331,11 +330,11 @@ def transformacao(lista_modelagem, lista_parametros, lista_coeficiente,
                     conc.conc_e_coli = np.array(lista_contr_retir[2][i][d][1][id_e_coli])
 
 
-                comp_ed_i = menor_dist(lista_parametros[3][i], lista_parametros[2][i],
-                                       lista_parametros[1][i], lista_contr_retir[2][i][d][0][1],
+                comp_ed_i = menor_dist(lat_dis, long_dis,
+                                       comp_dis, lista_contr_retir[2][i][d][0][1],
                                        lista_contr_retir[2][i][d][0][3], lista_contr_retir[2][i][d][0][5])
-                comp_ed_f = menor_dist(lista_parametros[3][i], lista_parametros[2][i],
-                                       lista_parametros[1][i], lista_contr_retir[2][i][d][0][2],
+                comp_ed_f = menor_dist(lat_dis, long_dis,
+                                       comp_dis, lista_contr_retir[2][i][d][0][2],
                                        lista_contr_retir[2][i][d][0][4], lista_contr_retir[2][i][d][0][6])
 
                 conc_ed.append(copy.deepcopy(EntradaPontual(lista_contr_retir[2][i][d][0][1],
@@ -355,8 +354,8 @@ def transformacao(lista_modelagem, lista_parametros, lista_coeficiente,
         if lista_contr_retir[3][i][3]:
             for r in range(lista_contr_retir[3][i][0]):
                 
-                comp_r = menor_dist(lista_parametros[3][i], lista_parametros[2][i],
-                                    lista_parametros[1][i], lista_contr_retir[0][i][r][0][1],
+                comp_r = menor_dist(lat_dis, long_dis,
+                                    comp_dis, lista_contr_retir[0][i][r][0][1],
                                     lista_contr_retir[0][i][r][0][2], lista_contr_retir[0][i][r][0][3])
 
                 conc_r.append(copy.deepcopy(SaidaPontual(lista_contr_retir[0][i][r][0][1],
@@ -666,8 +665,9 @@ def plotar(n_tributarios, lista_modelagem, lidt_df, list_entr, labels, zona, hem
             ex.write(lidt_df[r1])
 
         df_new = pd.concat(lidt_df)
-        ex2 = st.expander('Resultados Agrupado')
-        ex2.write(df_new)
+        if len(lidt_df) > 1:
+            ex2 = st.expander('Resultados Agrupado')
+            ex2.write(df_new)
 
     if str_lat != 'nan' and str_lat != 'None':
         with result_tabs[2]:       
