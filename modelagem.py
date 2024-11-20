@@ -10,17 +10,18 @@ def modelagem(selected, menu):
         st.markdown('#### Modelagem com os'
                     + ' :orange[coeficientes predefinidos]:')
 
-        paramentro = [True, False, True, True, True, True, 0, True]
+        paramentro = {'m_od': True, 'm_dbo': True, 'm_n': True, 'm_p': True,
+                      'm_c': True, 'n_tb': 0, 's_t': True}
         lista_modelagem, data, labels, lista_tabs = inicio(paramentro)
-        n_trib = lista_modelagem[6]
+        n_trib = lista_modelagem['n_tb']
 
 
         lista_parametros, list_name, list_valores, zona, hemisferio, dias = dados_iniciais(data, lista_modelagem, n_trib,
                                         labels, lista_tabs)
         
         list_name_salvo = copy.deepcopy(list_name)
-        ponto_af = lista_parametros[8]
-        ordem_desague = lista_parametros[9]
+        ponto_af = lista_parametros['p_af']
+        ordem_desague = lista_parametros['l_des']
 
         lista_coeficientes = coeficientes(data, lista_modelagem, n_trib,
                                         labels, lista_tabs, dias)

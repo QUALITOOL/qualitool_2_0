@@ -17,10 +17,14 @@ image = Image.open('LOGO.png')
 bar = st.sidebar
 bar.image(image, output_format="PNG")
 bar.text(' ')
+bar.markdown('''<div style='text-align: center;
+                    color: teal;
+                    '>MODELO DE QUALIDADE DA ÁGUA </div>''',
+                    unsafe_allow_html=True)
 bar.text(' ')
 
 # 1. as sidebar menu
-menu = ["APRESENTAÇÃO", 'INSTRUÇÕES', "MODELAGEM",  "CALIBRAÇÃO", "GRÁFICOS"]
+menu = ["APRESENTAÇÃO", 'INSTRUÇÕES', "MODELAGEM",  "AJUSTE E CALIBRAÇÃO", "GRÁFICOS"]
 with st.sidebar:
     selected = option_menu(None, menu,
                            icons=[

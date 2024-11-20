@@ -156,13 +156,13 @@ def transformacao(lista_modelagem, lista_parametros, lista_coeficiente,
     list_tranfor = []
     
 
-    for i in range(lista_modelagem[6] + 1):
+    for i in range(lista_modelagem['n_tb'] + 1):
 
-        hidraulica = (lista_hidr(lista_parametros[2][i],
-                                 lista_parametros[3][i],
-                                 lista_parametros[4][i],
-                                 lista_parametros[1][i],
-                                 lista_parametros[6][i]))
+        hidraulica = (lista_hidr(lista_parametros['l_lo'][i],
+                                 lista_parametros['l_la'][i],
+                                 lista_parametros['l_a'][i],
+                                 lista_parametros['l_c'][i],
+                                 lista_parametros['l_d'][i]))
         
         lat_dis = []
         long_dis = []
@@ -174,65 +174,65 @@ def transformacao(lista_modelagem, lista_parametros, lista_coeficiente,
 
 
         coeficiente = []
-        for k in range(lista_coeficiente[1][i] + 1):
-            k2_calc = False if lista_modelagem[1] else True
+        for k in range(lista_coeficiente['l_n_p'][i] + 1):
+            k2_calc = False if lista_modelagem['é_calc'] else True
             
-            coef = Coeficientes(np.array(lista_coeficiente[0][i + 1][k][1][lista_coeficiente[0][0].index('Temperatura (°C)')]),
+            coef = Coeficientes(np.array(lista_coeficiente['l_coe'][i + 1][k][1][lista_coeficiente['l_coe'][0].index('Temperatura (°C)')]),
                                 k2_calc, None, None, None,
                                 None, None, None, None, None,
                                 None, None, None, None, None,
                                 None, None, None, None, None)
 
-            if lista_modelagem[1]:
-                coef.k_2 = np.array(lista_coeficiente[0][i + 1][k][1][lista_coeficiente[0][0].index('k2 (1/d)')])
-            if lista_modelagem[1] == False and lista_modelagem[0] == True:
-                coef.k_2_max = lista_coeficiente[0][i + 1][k][0][3]
-            if lista_modelagem[0]:
-                coef.k_1 = np.array(lista_coeficiente[0][i + 1][k][1][lista_coeficiente[0][0].index('k1 (1/d)')])
-                coef.k_d = np.array(lista_coeficiente[0][i + 1][k][1][lista_coeficiente[0][0].index('kd (1/d)')])
-                coef.k_s = np.array(lista_coeficiente[0][i + 1][k][1][lista_coeficiente[0][0].index('ks (1/d)')])
-                coef.l_rd = np.array(lista_coeficiente[0][i + 1][k][1][lista_coeficiente[0][0].index('lrd (gDBO5/m.d)')])
-                coef.s_d = np.array(lista_coeficiente[0][i + 1][k][1][lista_coeficiente[0][0].index('sd (1/d)')])
-            if lista_modelagem[0] == True and lista_modelagem[3] == True:
-                coef.r_o2_amon = np.array(lista_coeficiente[0][i + 1][k][1][lista_coeficiente[0][0].index('O2namon (mgO2/mgNamon oxid)')])
-            if lista_modelagem[3]:
-                coef.k_oa = np.array(lista_coeficiente[0][i + 1][k][1][lista_coeficiente[0][0].index('koa (1/d)')])
-                coef.k_so = np.array(lista_coeficiente[0][i + 1][k][1][lista_coeficiente[0][0].index('kso (1/d)')])
-                coef.k_an = np.array(lista_coeficiente[0][i + 1][k][1][lista_coeficiente[0][0].index('kan (1/d)')])
-                coef.s_amon = np.array(lista_coeficiente[0][i + 1][k][1][lista_coeficiente[0][0].index('Snamon (g/m2.d)')])
-                coef.k_nn = np.array(lista_coeficiente[0][i + 1][k][1][lista_coeficiente[0][0].index('knn (1/d)')])
-                coef.k_nit_od = np.array(lista_coeficiente[0][i + 1][k][1][lista_coeficiente[0][0].index('knitr (1/d)')])
-            if lista_modelagem[4]:
-                coef.k_oi = np.array(lista_coeficiente[0][i + 1][k][1][lista_coeficiente[0][0].index('koi (1/d)')])
-                coef.k_spo = np.array(lista_coeficiente[0][i + 1][k][1][lista_coeficiente[0][0].index('kspo (1/d)')])
-                coef.s_pinorg = np.array(lista_coeficiente[0][i + 1][k][1][lista_coeficiente[0][0].index('spinorg (1/d)')])
-            if lista_modelagem[5]:
-                coef.k_b = np.array(lista_coeficiente[0][i + 1][k][1][lista_coeficiente[0][0].index('kb (1/d)')])
+            if lista_modelagem['é_calc']:
+                coef.k_2 = np.array(lista_coeficiente['l_coe'][i + 1][k][1][lista_coeficiente['l_coe'][0].index('k2 (1/d)')])
+            if lista_modelagem['é_calc'] == False and lista_modelagem['m_od'] == True:
+                coef.k_2_max = lista_coeficiente['l_coe'][i + 1][k][0][3]
+            if lista_modelagem['m_od']:
+                coef.k_1 = np.array(lista_coeficiente['l_coe'][i + 1][k][1][lista_coeficiente['l_coe'][0].index('k1 (1/d)')])
+                coef.k_d = np.array(lista_coeficiente['l_coe'][i + 1][k][1][lista_coeficiente['l_coe'][0].index('kd (1/d)')])
+                coef.k_s = np.array(lista_coeficiente['l_coe'][i + 1][k][1][lista_coeficiente['l_coe'][0].index('ks (1/d)')])
+                coef.l_rd = np.array(lista_coeficiente['l_coe'][i + 1][k][1][lista_coeficiente['l_coe'][0].index('lrd (gDBO5/m.d)')])
+                coef.s_d = np.array(lista_coeficiente['l_coe'][i + 1][k][1][lista_coeficiente['l_coe'][0].index('sd (1/d)')])
+            if lista_modelagem['m_od'] == True and lista_modelagem['m_n'] == True:
+                coef.r_o2_amon = np.array(lista_coeficiente['l_coe'][i + 1][k][1][lista_coeficiente['l_coe'][0].index('O2namon (mgO2/mgNamon oxid)')])
+            if lista_modelagem['m_n']:
+                coef.k_oa = np.array(lista_coeficiente['l_coe'][i + 1][k][1][lista_coeficiente['l_coe'][0].index('koa (1/d)')])
+                coef.k_so = np.array(lista_coeficiente['l_coe'][i + 1][k][1][lista_coeficiente['l_coe'][0].index('kso (1/d)')])
+                coef.k_an = np.array(lista_coeficiente['l_coe'][i + 1][k][1][lista_coeficiente['l_coe'][0].index('kan (1/d)')])
+                coef.s_amon = np.array(lista_coeficiente['l_coe'][i + 1][k][1][lista_coeficiente['l_coe'][0].index('Snamon (g/m2.d)')])
+                coef.k_nn = np.array(lista_coeficiente['l_coe'][i + 1][k][1][lista_coeficiente['l_coe'][0].index('knn (1/d)')])
+                coef.k_nit_od = np.array(lista_coeficiente['l_coe'][i + 1][k][1][lista_coeficiente['l_coe'][0].index('knitr (1/d)')])
+            if lista_modelagem['m_p']:
+                coef.k_oi = np.array(lista_coeficiente['l_coe'][i + 1][k][1][lista_coeficiente['l_coe'][0].index('koi (1/d)')])
+                coef.k_spo = np.array(lista_coeficiente['l_coe'][i + 1][k][1][lista_coeficiente['l_coe'][0].index('kspo (1/d)')])
+                coef.s_pinorg = np.array(lista_coeficiente['l_coe'][i + 1][k][1][lista_coeficiente['l_coe'][0].index('spinorg (1/d)')])
+            if lista_modelagem['m_c']:
+                coef.k_b = np.array(lista_coeficiente['l_coe'][i + 1][k][1][lista_coeficiente['l_coe'][0].index('kb (1/d)')])
 
             comp_C = menor_dist(lat_dis, long_dis,
-                                comp_dis, lista_coeficiente[0][i + 1][k][0][0],
-                                lista_coeficiente[0][i + 1][k][0][1], lista_coeficiente[0][i + 1][k][0][2])
+                                comp_dis, lista_coeficiente['l_coe'][i + 1][k][0][0],
+                                lista_coeficiente['l_coe'][i + 1][k][0][1], lista_coeficiente['l_coe'][i + 1][k][0][2])
 
-            coeficiente.append(copy.deepcopy(CoeficientesEntrada(lista_coeficiente[0][i + 1][k][0][0],
-                                                                 lista_coeficiente[0][i + 1][k][0][1],
+            coeficiente.append(copy.deepcopy(CoeficientesEntrada(lista_coeficiente['l_coe'][i + 1][k][0][0],
+                                                                 lista_coeficiente['l_coe'][i + 1][k][0][1],
                                                                  comp_C,
                                                                  copy.deepcopy(coef),
                                                                  i)))
     
         
         geometria = []
-        for j in range(lista_parametros[7][i] + 1):
+        for j in range(lista_parametros['l_q_s'][i] + 1):
             comp_g = menor_dist(lat_dis, long_dis,
-                                comp_dis, lista_parametros[5][i][j][0],
-                                lista_parametros[5][i][j][1], lista_parametros[5][i][j][2])
+                                comp_dis, lista_parametros['l_sc'][i][j][0],
+                                lista_parametros['l_sc'][i][j][1], lista_parametros['l_sc'][i][j][2])
             
-            geometria.append(copy.deepcopy(SeccaoTransversal(lista_parametros[5][i][j][0],
-                                                             lista_parametros[5][i][j][1],
+            geometria.append(copy.deepcopy(SeccaoTransversal(lista_parametros['l_sc'][i][j][0],
+                                                             lista_parametros['l_sc'][i][j][1],
                                                              comp_g,
-                                                             lista_parametros[5][i][j][4],
-                                                             lista_parametros[5][i][j][5],
-                                                             lista_parametros[5][i][j][3],
-                                                             lista_parametros[5][i][j][6])))
+                                                             lista_parametros['l_sc'][i][j][4],
+                                                             lista_parametros['l_sc'][i][j][5],
+                                                             lista_parametros['l_sc'][i][j][3],
+                                                             lista_parametros['l_sc'][i][j][6])))
         
 
         
@@ -240,129 +240,129 @@ def transformacao(lista_modelagem, lista_parametros, lista_coeficiente,
                              None, None, None, None, None)
    
         # Entradas Pontuais
-        if lista_modelagem[0]:
+        if lista_modelagem['m_od']:
             id_od = list_name.index('OD (mg/L)')
-            conc.conc_od = np.array(lista_parametros[0][i][id_od])
+            conc.conc_od = np.array(lista_parametros['l_v_i'][i][id_od])
             id_dbo = list_name.index('DBO (mg/L)')
-            conc.conc_dbo = np.array(lista_parametros[0][i][id_dbo])
-        if lista_modelagem[3]:
+            conc.conc_dbo = np.array(lista_parametros['l_v_i'][i][id_dbo])
+        if lista_modelagem['m_n']:
             id_no = list_name.index('N-org (mg/L)')
-            conc.conc_no = np.array(lista_parametros[0][i][id_no])
+            conc.conc_no = np.array(lista_parametros['l_v_i'][i][id_no])
             id_n_amon = list_name.index('N-amon (mg/L)')
-            conc.conc_n_amon = np.array(lista_parametros[0][i][id_n_amon])
+            conc.conc_n_amon = np.array(lista_parametros['l_v_i'][i][id_n_amon])
             id_nitrito = list_name.index('N-nitri (mg/L)')
-            conc.conc_nitrito = np.array(lista_parametros[0][i][id_nitrito])
+            conc.conc_nitrito = np.array(lista_parametros['l_v_i'][i][id_nitrito])
             id_nitrato = list_name.index('N-nitra (mg/L)')
-            conc.conc_nitrato = np.array(lista_parametros[0][i][id_nitrato])
-        if lista_modelagem[4]:
+            conc.conc_nitrato = np.array(lista_parametros['l_v_i'][i][id_nitrato])
+        if lista_modelagem['m_p']:
             id_p_org = list_name.index('P-org (mg/L)')
-            conc.conc_p_org = np.array(lista_parametros[0][i][id_p_org])
+            conc.conc_p_org = np.array(lista_parametros['l_v_i'][i][id_p_org])
             id_p_inorg = list_name.index('P-inorg (mg/L)')
-            conc.conc_p_inorg = np.array(lista_parametros[0][i][id_p_inorg])
+            conc.conc_p_inorg = np.array(lista_parametros['l_v_i'][i][id_p_inorg])
             conc.conc_p_total = conc.conc_p_org + conc.conc_p_inorg
-        if lista_modelagem[5]:
+        if lista_modelagem['m_c']:
             id_e_coli = list_name.index('E-coli (NMP/100ml)')
-            conc.conc_e_coli = np.array(lista_parametros[0][i][id_e_coli])
+            conc.conc_e_coli = np.array(lista_parametros['l_v_i'][i][id_e_coli])
 
-        id = 1 if lista_modelagem[7] else 0
+        id = 1 if lista_modelagem['s_t'] else 0
         id_q = id
                 
-        conc_ep = [copy.deepcopy(EntradaPontual(lista_parametros[3][i][0],
-                                                lista_parametros[2][i][0],
+        conc_ep = [copy.deepcopy(EntradaPontual(lista_parametros['l_la'][i][0],
+                                                lista_parametros['l_lo'][i][0],
                                                 0.0,
                                                 copy.deepcopy(conc),
-                                                np.array(lista_parametros[0][i][id_q]),
+                                                np.array(lista_parametros['l_v_i'][i][id_q]),
                                                 'Início',
                                                 i))]
         
         id_q = 0
         # Entradas Pontuais
-        if lista_contr_retir[3][i][4]:
+        if lista_contr_retir['l_q'][i][4]:
 
-            for p in range(lista_contr_retir[3][i][1]):
+            for p in range(lista_contr_retir['l_q'][i][1]):
 
                 
-                if lista_modelagem[0]:
-                    conc.conc_od = np.array(lista_contr_retir[1][i][p][1][id_od])
-                    conc.conc_dbo = np.array(lista_contr_retir[1][i][p][1][id_dbo])
-                if lista_modelagem[3]:
-                    conc.conc_no = np.array(lista_contr_retir[1][i][p][1][id_no])
-                    conc.conc_n_amon = np.array(lista_contr_retir[1][i][p][1][id_n_amon])
-                    conc.conc_nitrito = np.array(lista_contr_retir[1][i][p][1][id_nitrito])
-                    conc.conc_nitrato = np.array(lista_contr_retir[1][i][p][1][id_nitrato])
-                if lista_modelagem[4]:
-                    conc.conc_p_org = np.array(lista_contr_retir[1][i][p][1][id_p_org])
-                    conc.conc_p_inorg = np.array(lista_contr_retir[1][i][p][1][id_p_inorg])
+                if lista_modelagem['m_od']:
+                    conc.conc_od = np.array(lista_contr_retir['l_ep'][i][p][1][id_od])
+                    conc.conc_dbo = np.array(lista_contr_retir['l_ep'][i][p][1][id_dbo])
+                if lista_modelagem['m_n']:
+                    conc.conc_no = np.array(lista_contr_retir['l_ep'][i][p][1][id_no])
+                    conc.conc_n_amon = np.array(lista_contr_retir['l_ep'][i][p][1][id_n_amon])
+                    conc.conc_nitrito = np.array(lista_contr_retir['l_ep'][i][p][1][id_nitrito])
+                    conc.conc_nitrato = np.array(lista_contr_retir['l_ep'][i][p][1][id_nitrato])
+                if lista_modelagem['m_p']:
+                    conc.conc_p_org = np.array(lista_contr_retir['l_ep'][i][p][1][id_p_org])
+                    conc.conc_p_inorg = np.array(lista_contr_retir['l_ep'][i][p][1][id_p_inorg])
                     conc.conc_p_total = conc.conc_p_org + conc.conc_p_inorg
-                if lista_modelagem[5]:
-                    conc.conc_e_coli = np.array(lista_contr_retir[1][i][p][1][id_e_coli])
+                if lista_modelagem['m_c']:
+                    conc.conc_e_coli = np.array(lista_contr_retir['l_ep'][i][p][1][id_e_coli])
 
                 comp_ep = menor_dist(lat_dis, long_dis,
-                                     comp_dis, lista_contr_retir[1][i][p][0][1],
-                                     lista_contr_retir[1][i][p][0][2], lista_contr_retir[1][i][p][0][3])
+                                     comp_dis, lista_contr_retir['l_ep'][i][p][0][1],
+                                     lista_contr_retir['l_ep'][i][p][0][2], lista_contr_retir['l_ep'][i][p][0][3])
                 
-                conc_ep.append(copy.deepcopy(EntradaPontual(lista_contr_retir[1][i][p][0][1],
-                                                            lista_contr_retir[1][i][p][0][2],
+                conc_ep.append(copy.deepcopy(EntradaPontual(lista_contr_retir['l_ep'][i][p][0][1],
+                                                            lista_contr_retir['l_ep'][i][p][0][2],
                                                             comp_ep,
                                                             copy.deepcopy(conc),
-                                                            np.array(lista_contr_retir[1][i][p][1][id_q]),
-                                                            lista_contr_retir[1][i][p][0][0],
+                                                            np.array(lista_contr_retir['l_ep'][i][p][1][id_q]),
+                                                            lista_contr_retir['l_ep'][i][p][0][0],
                                                             i)))
 
         # Entradas Difusas
         conc_ed = []
-        if lista_contr_retir[3][i][5]:
-            for d in range(lista_contr_retir[3][i][2]):
+        if lista_contr_retir['l_q'][i][5]:
+            for d in range(lista_contr_retir['l_q'][i][2]):
                 
-                if lista_modelagem[0]:
-                    conc.conc_od = np.array(lista_contr_retir[2][i][d][1][id_od])
-                    conc.conc_dbo = np.array(lista_contr_retir[2][i][d][1][id_dbo])
-                if lista_modelagem[3]:
-                    conc.conc_no = np.array(lista_contr_retir[2][i][d][1][id_no])
-                    conc.conc_n_amon = np.array(lista_contr_retir[2][i][d][1][id_n_amon])
-                    conc.conc_nitrito = np.array(lista_contr_retir[2][i][d][1][id_nitrito])
-                    conc.conc_nitrato = np.array(lista_contr_retir[2][i][d][1][id_nitrato])
-                if lista_modelagem[4]:
-                    conc.conc_p_org = np.array(lista_contr_retir[2][i][d][1][id_p_org])
-                    conc.conc_p_inorg = np.array(lista_contr_retir[2][i][d][1][id_p_inorg])
+                if lista_modelagem['m_od']:
+                    conc.conc_od = np.array(lista_contr_retir['l_ed'][i][d][1][id_od])
+                    conc.conc_dbo = np.array(lista_contr_retir['l_ed'][i][d][1][id_dbo])
+                if lista_modelagem['m_n']:
+                    conc.conc_no = np.array(lista_contr_retir['l_ed'][i][d][1][id_no])
+                    conc.conc_n_amon = np.array(lista_contr_retir['l_ed'][i][d][1][id_n_amon])
+                    conc.conc_nitrito = np.array(lista_contr_retir['l_ed'][i][d][1][id_nitrito])
+                    conc.conc_nitrato = np.array(lista_contr_retir['l_ed'][i][d][1][id_nitrato])
+                if lista_modelagem['m_p']:
+                    conc.conc_p_org = np.array(lista_contr_retir['l_ed'][i][d][1][id_p_org])
+                    conc.conc_p_inorg = np.array(lista_contr_retir['l_ed'][i][d][1][id_p_inorg])
                     conc.conc_p_total = conc.conc_p_org + conc.conc_p_inorg
-                if lista_modelagem[5]:
-                    conc.conc_e_coli = np.array(lista_contr_retir[2][i][d][1][id_e_coli])
+                if lista_modelagem['m_c']:
+                    conc.conc_e_coli = np.array(lista_contr_retir['l_ed'][i][d][1][id_e_coli])
 
 
                 comp_ed_i = menor_dist(lat_dis, long_dis,
-                                       comp_dis, lista_contr_retir[2][i][d][0][1],
-                                       lista_contr_retir[2][i][d][0][3], lista_contr_retir[2][i][d][0][5])
+                                       comp_dis, lista_contr_retir['l_ed'][i][d][0][1],
+                                       lista_contr_retir['l_ed'][i][d][0][3], lista_contr_retir['l_ed'][i][d][0][5])
                 comp_ed_f = menor_dist(lat_dis, long_dis,
-                                       comp_dis, lista_contr_retir[2][i][d][0][2],
-                                       lista_contr_retir[2][i][d][0][4], lista_contr_retir[2][i][d][0][6])
+                                       comp_dis, lista_contr_retir['l_ed'][i][d][0][2],
+                                       lista_contr_retir['l_ed'][i][d][0][4], lista_contr_retir['l_ed'][i][d][0][6])
 
-                conc_ed.append(copy.deepcopy(EntradaPontual(lista_contr_retir[2][i][d][0][1],
-                                                            lista_contr_retir[2][i][d][0][3],
-                                                            lista_contr_retir[2][i][d][0][2],
-                                                            lista_contr_retir[2][i][d][0][4],
+                conc_ed.append(copy.deepcopy(EntradaPontual(lista_contr_retir['l_ed'][i][d][0][1],
+                                                            lista_contr_retir['l_ed'][i][d][0][3],
+                                                            lista_contr_retir['l_ed'][i][d][0][2],
+                                                            lista_contr_retir['l_ed'][i][d][0][4],
                                                             comp_ed_i,
                                                             comp_ed_f,
                                                             copy.deepcopy(conc),
-                                                            np.array(lista_contr_retir[2][i][d][1][id_q]),
-                                                            lista_contr_retir[2][i][d][0][0],
+                                                            np.array(lista_contr_retir['l_ed'][i][d][1][id_q]),
+                                                            lista_contr_retir['l_ed'][i][d][0][0],
                                                             i)))
 
 
         # Saídas Pontuais
         conc_r = []
-        if lista_contr_retir[3][i][3]:
-            for r in range(lista_contr_retir[3][i][0]):
+        if lista_contr_retir['l_q'][i][3]:
+            for r in range(lista_contr_retir['l_q'][i][0]):
                 
                 comp_r = menor_dist(lat_dis, long_dis,
-                                    comp_dis, lista_contr_retir[0][i][r][0][1],
-                                    lista_contr_retir[0][i][r][0][2], lista_contr_retir[0][i][r][0][3])
+                                    comp_dis, lista_contr_retir['l_r'][i][r][0][1],
+                                    lista_contr_retir['l_r'][i][r][0][2], lista_contr_retir['l_r'][i][r][0][3])
 
-                conc_r.append(copy.deepcopy(SaidaPontual(lista_contr_retir[0][i][r][0][1],
-                                                         lista_contr_retir[0][i][r][0][2],
+                conc_r.append(copy.deepcopy(SaidaPontual(lista_contr_retir['l_r'][i][r][0][1],
+                                                         lista_contr_retir['l_r'][i][r][0][2],
                                                          comp_r,
-                                                         np.array(lista_contr_retir[0][i][r][1][id_q]),
-                                                         lista_contr_retir[0][i][r][0][0],
+                                                         np.array(lista_contr_retir['l_r'][i][r][1][id_q]),
+                                                         lista_contr_retir['l_r'][i][r][0][0],
                                                          i)))
 
         list_tranfor.append(copy.deepcopy(Geral(geometria,
@@ -372,7 +372,7 @@ def transformacao(lista_modelagem, lista_parametros, lista_coeficiente,
                                                 conc_ed,
                                                 hidraulica,
                                                 i,
-                                                lista_parametros[6][i])))
+                                                lista_parametros['l_d'][i])))
 
     return list_tranfor
 
@@ -412,23 +412,23 @@ def resultados(n_tributarios, list_tranfor, ponto_af, lista_modelagem, ordem_des
         obj_to_dict = {'rio': [],'latitude': [], 'longitude': [], 'altitude': [], 'comprimento': [], 'vazao': [],
                         'profundidade': [], 'velocidade': [], 'tensao_c': [], 'nivel_dagua': [],
                         'froude': []}
-        if lista_modelagem[7]:
+        if lista_modelagem['s_t']:
             dt = {'data': []}
             dt.update(obj_to_dict)
             obj_to_dict = dt
-        if lista_modelagem[0]:
+        if lista_modelagem['m_od']:
             obj_to_dict['conc_od'] = []
             obj_to_dict['conc_dbo'] = []
-        if lista_modelagem[3]:
+        if lista_modelagem['m_n']:
             obj_to_dict['conc_no'] = []
             obj_to_dict['conc_n_amon'] = []
             obj_to_dict['conc_nitrito'] = []
             obj_to_dict['conc_nitrato'] = []
-        if lista_modelagem[4]:
+        if lista_modelagem['m_p']:
             obj_to_dict['conc_p_org'] = []
             obj_to_dict['conc_p_inorg'] = []
             obj_to_dict['conc_p_total'] = []
-        if lista_modelagem[5]:
+        if lista_modelagem['m_c']:
             obj_to_dict['conc_e_coli'] = []
         
         for idata in (range(len(rio[0].hidraulica.vazao))):
@@ -448,21 +448,21 @@ def resultados(n_tributarios, list_tranfor, ponto_af, lista_modelagem, ordem_des
                 obj_to_dict['nivel_dagua'].append(h.nivel_dagua[idata])
                 obj_to_dict['froude'].append(h.froude[idata])
 
-                if lista_modelagem[7]:
+                if lista_modelagem['s_t']:
                     obj_to_dict['data'].append(dias[idata])
-                if lista_modelagem[0]:
+                if lista_modelagem['m_od']:
                     obj_to_dict['conc_od'].append(cc.conc_od[idata])
                     obj_to_dict['conc_dbo'].append(cc.conc_dbo[idata])
-                if lista_modelagem[3]:
+                if lista_modelagem['m_n']:
                     obj_to_dict['conc_no'].append(cc.conc_no[idata])
                     obj_to_dict['conc_n_amon'].append(cc.conc_n_amon[idata])
                     obj_to_dict['conc_nitrito'].append(cc.conc_nitrito[idata])
                     obj_to_dict['conc_nitrato'].append(cc.conc_nitrato[idata])
-                if lista_modelagem[4]:
+                if lista_modelagem['m_p']:
                     obj_to_dict['conc_p_org'].append(cc.conc_p_org[idata])
                     obj_to_dict['conc_p_inorg'].append(cc.conc_p_inorg[idata])
                     obj_to_dict['conc_p_total'].append(cc.conc_p_total[idata])
-                if lista_modelagem[5]:
+                if lista_modelagem['m_c']:
                     obj_to_dict['conc_e_coli'].append(cc.conc_e_coli[idata])
 
         df = pd.DataFrame(obj_to_dict)
@@ -496,7 +496,7 @@ def plotar(n_tributarios, lista_modelagem, lidt_df, list_entr, labels, zona, hem
     result_tabs = st.tabs(list_tab)
 
     with result_tabs[0]:
-        if lista_modelagem[7]:
+        if lista_modelagem['s_t']:
             df = lidt_df[0].loc[lidt_df[0]['data'] == dias[-1]]
             fig = make_subplots(specs=[[{"secondary_y": True}]])
             fig.update_layout(title_text="Concentrações do dia " + str(dias[-1]),
@@ -508,17 +508,17 @@ def plotar(n_tributarios, lista_modelagem, lidt_df, list_entr, labels, zona, hem
             fig.update_layout(title_text="Concentrações",
                                 title_font_color="teal")
 
-        if lista_modelagem[0]:
+        if lista_modelagem['m_od']:
             fig.add_trace(go.Scatter(x=df["comprimento"], y=df["conc_od"],
                                 mode='lines',
                                 name='OD'))
         
-        if lista_modelagem[2]:
+        if lista_modelagem['m_dbo']:
             fig.add_trace(go.Scatter(x=df["comprimento"], y=df["conc_dbo"],
                                 mode='lines',
                                 name='DBO'))
         
-        if lista_modelagem[2]:
+        if lista_modelagem['m_dbo']:
             fig.add_trace(go.Scatter(x=df["comprimento"], y=df["conc_no"],
                                 mode='lines',
                                 name='N-org'))
@@ -531,7 +531,7 @@ def plotar(n_tributarios, lista_modelagem, lidt_df, list_entr, labels, zona, hem
             fig.add_trace(go.Scatter(x=df["comprimento"], y=df["conc_nitrito"],
                                 mode='lines',
                                 name='N-nitra'))
-        if lista_modelagem[3]:
+        if lista_modelagem['m_n']:
             fig.add_trace(go.Scatter(x=df["comprimento"], y=df["conc_p_org"],
                                 mode='lines',
                                 name='P-org'))
@@ -541,7 +541,7 @@ def plotar(n_tributarios, lista_modelagem, lidt_df, list_entr, labels, zona, hem
             fig.add_trace(go.Scatter(x=df["comprimento"], y=df["conc_p_total"],
                                 mode='lines',
                                 name='P total'))
-        if lista_modelagem[4]:
+        if lista_modelagem['m_p']:
             fig.add_trace(go.Scatter(x=df["comprimento"], y=df["conc_e_coli"],
                                 mode='lines',
                                 name='E-coli', yaxis="y2"))
@@ -674,7 +674,7 @@ def plotar(n_tributarios, lista_modelagem, lidt_df, list_entr, labels, zona, hem
 
             from pyproj import Proj
             
-            if lista_modelagem[7]:
+            if lista_modelagem['s_t']:
                 df_new = df_new.loc[df_new['data'] == dias[-1]]
                 titulo = 'Concentrações do dia ' + str(dias[-1])
             else:
@@ -699,20 +699,20 @@ def plotar(n_tributarios, lista_modelagem, lidt_df, list_entr, labels, zona, hem
                                     margin={"r":0,"t":0,"l":0,"b":0})
 
 
-            if lista_modelagem[0]:
+            if lista_modelagem['m_od']:
                 plot_map(maps, df_new, df_new["conc_od"], 'OD (mg/L)', False)               
-            if lista_modelagem[2]:
+            if lista_modelagem['m_dbo']:
                 plot_map(maps, df_new, df_new["conc_dbo"], 'DBO (mg/L)', True)
-            if lista_modelagem[3]:
+            if lista_modelagem['m_n']:
                 plot_map(maps, df_new, df_new["conc_p_org"], 'P-org (mg/L)', True)
                 plot_map(maps, df_new, df_new["conc_p_inorg"], 'P-inorg (mg/L)', True)
                 plot_map(maps, df_new, df_new["conc_p_total"], 'P total (mg/L)', True)     
-            if lista_modelagem[2]:
+            if lista_modelagem['m_dbo']:
                 plot_map(maps, df_new, df_new["conc_no"], 'N-org (mg/L)', True)
                 plot_map(maps, df_new, df_new["conc_n_amon"], 'N-amon (mg/L)', True)
                 plot_map(maps, df_new, df_new["conc_nitrato"], 'N-nitri (mg/L)', True)
                 plot_map(maps, df_new, df_new["conc_nitrito"], 'N-nitra (mg/L)', True)
-            if lista_modelagem[4]:
+            if lista_modelagem['m_p']:
                 plot_map(maps, df_new, df_new["conc_e_coli"], 'E-coli (NMP/100ml)', True)
             st.plotly_chart(maps, use_container_width=True)
     

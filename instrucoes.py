@@ -11,6 +11,6 @@ def teste(selecao, menu):
                     unsafe_allow_html=True)
         
         st.markdown('''<div style='text-align: justify;
-                    '>Texto.  </div>''',
+                    '>Em manutenção.  </div>''',
                     unsafe_allow_html=True)
     return

@@ -38,13 +38,13 @@ def introducao(selecao, menu):
         st.write('')
         st.markdown('''<div style='text-align: justify;
                     '>¹ Mestre em Qualidade Ambiental pela Universidade Federal 
-                    de Uberlândia (2024); </div>''',
+                    de Uberlândia (2024). </div>''',
                     unsafe_allow_html=True)
         st.markdown('''<div style='text-align: justify;
                     '>² Doutor em Engenharia Hidráulica e Saneamento pela Universidade 
                     de São Paulo (2006); Pós-doutorado pelo Instituto de Ingeniería del 
                     Agua y Medio Ambiente de la Universidad Politecnica de Valencia - 
-                    IIAMA/UPV (2013);  </div>''',
+                    IIAMA/UPV (2013).  </div>''',
                     unsafe_allow_html=True)
         st.write('')
         st.markdown('''Contatos: qualitool.labhidro.ufu@gmail.com | flavya2310@gmail.com | marcio.salla@ufu.br
