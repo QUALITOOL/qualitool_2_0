@@ -15,10 +15,10 @@ pg = st.navigation([st.Page("pages/introducao.py", title="QUALITOOL 2.0"),
                     position="hidden")
 
 # image = Image.open('C:\Flavya\MQA\QUALI_TOOL\QT_2_0\qualitool_local\Meu_rep\imagens\LOGO.png')
-image = Image.open('imagens\LOGO.png')
+# image = Image.open('imagens\LOGO.png')
 
 bar = st.sidebar
-bar.image(image, output_format="PNG")
+bar.image('https://github.com/QUALITOOL/qualitool_2_0/blob/8b8afa7e8e54a6791b6d249a64b10663aec4a1b9/imagens/LOGO.png')
 bar.text(' ')
 bar.markdown('''<div style='text-align: center;
                     color: teal;
