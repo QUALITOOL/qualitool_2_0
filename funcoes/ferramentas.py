@@ -636,11 +636,11 @@ def plotar(n_tributarios, lista_modelagem, lidt_df, list_entr, labels, zona, hem
                 plot_map(maps, df_new, df_new["conc_od"], 'OD (mg/L)', False)               
             if lista_modelagem['m_dbo']:
                 plot_map(maps, df_new, df_new["conc_dbo"], 'DBO (mg/L)', True)
-            if lista_modelagem['m_n']:
+            if lista_modelagem['m_p']:
                 plot_map(maps, df_new, df_new["conc_p_org"], 'P-org (mg/L)', True)
                 plot_map(maps, df_new, df_new["conc_p_inorg"], 'P-inorg (mg/L)', True)
                 plot_map(maps, df_new, df_new["conc_p_total"], 'P total (mg/L)', True)     
-            if lista_modelagem['m_p']:
+            if lista_modelagem['m_n']:
                 plot_map(maps, df_new, df_new["conc_no"], 'N-org (mg/L)', True)
                 plot_map(maps, df_new, df_new["conc_n_amon"], 'N-amon (mg/L)', True)
                 plot_map(maps, df_new, df_new["conc_nitrato"], 'N-nitri (mg/L)', True)

@@ -60,8 +60,8 @@ lista_final, list_entr = modelagem_Final_2(transf_final, reslt_calb['ponto_af'],
 
     
 lidt_df = []
-for r in range(n_tributarios+ 1):
-    rio = lista_final[r]
+for r in range(n_tributarios + 1):
+    rio = lista_final[ordem_modelagem.index(r)]
     df = None
     obj_to_dict = {'rio': [],'latitude': [], 'longitude': [], 'altitude': [], 'comprimento': [], 'vazao': [],
                     'profundidade': [], 'velocidade': [], 'tensao_c': [], 'nivel_dagua': [],
@@ -122,4 +122,6 @@ for r in range(n_tributarios+ 1):
     df = pd.DataFrame(obj_to_dict)
     lidt_df.append(df)
 
+# return lidt_df, list_entr, ordem_modelagem
 plotar(n_tributarios, lista_modelagem, lidt_df, list_entr, labels, zona, hemisferio, dias)
+# return

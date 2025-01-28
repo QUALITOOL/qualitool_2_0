@@ -46,9 +46,11 @@ else:
 lista_final, list_entr = modelagem_Final(list_tranfor, ponto_af, lista_modelagem,
                                             ordem_desague, ordem_modelagem)
 
+
 lidt_df = []
-for r in range(n_tributarios+ 1):
-    rio = lista_final[r]
+for r in range(n_tributarios + 1):
+    rio = lista_final[ordem_modelagem.index(r)]
+
     df = None
     obj_to_dict = {'rio': [],'latitude': [], 'longitude': [], 'altitude': [], 'comprimento': [], 'vazao': [],
                     'profundidade': [], 'velocidade': [], 'tensao_c': [], 'nivel_dagua': [],
@@ -72,6 +74,7 @@ for r in range(n_tributarios+ 1):
     if lista_modelagem['m_c']:
         obj_to_dict['conc_e_coli'] = []
     
+
     for idata in (range(len(rio[0].hidraulica.vazao))):
         for i in range(len(rio)):
             h = rio[i].hidraulica
@@ -108,6 +111,7 @@ for r in range(n_tributarios+ 1):
 
     df = pd.DataFrame(obj_to_dict)
     lidt_df.append(df)
+
 
 plotar(n_tributarios, lista_modelagem, lidt_df, list_entr, labels, zona, hemisferio, dias)
 

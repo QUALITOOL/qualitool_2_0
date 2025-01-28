@@ -1,6 +1,7 @@
 import numpy as np
 import scipy.optimize as opt
 import copy
+import streamlit as st
 
 ##########################################################################################################
 # OBJETOS
@@ -178,15 +179,18 @@ def func_hidraulica(lista_hidraulica, lista_s_pontual, lista_e_pontual, lista_e_
         for j in range(len(lista_e_pontual)):
             if lista_hidraulica[i].comprimento == lista_e_pontual[j].comprimento:
                 vazao_atual += lista_e_pontual[j].vazao
+                print('aqui pontual')
         
         if len(lista_s_pontual) > 0:
             for k in range(len(lista_s_pontual)):
                 if lista_hidraulica[i].comprimento == lista_s_pontual[k].comprimento:
                     vazao_atual -= lista_s_pontual[k].vazao
+                    print('aqui saída')
         if len(lista_e_difusa) > 0:
             for n in range(len(lista_e_difusa)):
                 if lista_e_difusa[n].comprimento_inicial <= lista_hidraulica[i].comprimento < lista_e_difusa[n].comprimento_final:
                     
+                    print('aqui difusa')
                     fator_divisor = (lista_e_difusa[n].comprimento_final - lista_e_difusa[n].comprimento_inicial) / discretizacao
                     vazao_atual += (lista_e_difusa[n].vazao / fator_divisor)
 
@@ -236,6 +240,7 @@ def func_hidraulica(lista_hidraulica, lista_s_pontual, lista_e_pontual, lista_e_
 
         final = Quanti_Qualitativo(lista_hidraulica[i], None, None, None)
         lista_final.append(copy.deepcopy(final))
+    print('acabou')
     
     return lista_final
 
@@ -559,7 +564,6 @@ def modelagem_Final(lista_rio, ponto_af, lista_modelagem,
     lista_completa_final = []
     for ior in ordem_modelagem:
         dados = lista_rio[ior]
-        print(ordem_modelagem)
         lista_hidr_model = func_hidraulica(dados.lista_hidraulica, dados.lista_s_pontual,
                                             dados.lista_e_pontual, dados.lista_e_difusa,
                                             dados.lista_s_transversal, dados.discretizacao)
@@ -567,7 +571,7 @@ def modelagem_Final(lista_rio, ponto_af, lista_modelagem,
         lista_final = modelagem(lista_hidr_model, dados.lista_e_coeficientes, dados.lista_s_pontual,
                                 dados.lista_e_pontual, dados.lista_e_difusa, dados.rio,
                                 dados.discretizacao, lista_modelagem)
-
+        
         
         if ior != 0:
             comp = menor_dist2(lista_rio[ordem_desague[ior - 1]], ponto_af[ior - 1][1],
@@ -578,8 +582,7 @@ def modelagem_Final(lista_rio, ponto_af, lista_modelagem,
                                       lista_final[-1].hidraulica.vazao, ponto_af[ior - 1][0], lista_final[-1].rio)
             
             lista_rio[ordem_desague[ior - 1]].lista_e_pontual.append(copy.deepcopy(afluente))
-            
-        
+
         lista_completa_final.append(copy.deepcopy(lista_final))
     return lista_completa_final, lista_rio[0].lista_e_pontual
 

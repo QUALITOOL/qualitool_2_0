@@ -1,7 +1,7 @@
 import streamlit as st
 from funcoes.layout_modelagem import inicio, dados_iniciais, coeficientes
 from funcoes.layout_modelagem import fun_contrib_retirad, salvararquivo
-from funcoes.ferramentas import transformacao, lista_hidraulica
+from funcoes.ferramentas import transformacao
 import copy
 
 
@@ -43,6 +43,7 @@ if botao:
     list_tranfor = transformacao(lista_modelagem, lista_parametros, lista_coeficientes,
                                 lista_contr_retir, list_name_salvo)
     
+
     st.session_state['reslt_model'] = [n_trib, list_tranfor, ponto_af, lista_modelagem,
                                     ordem_desague, dias, labels, zona, hemisferio]
 
