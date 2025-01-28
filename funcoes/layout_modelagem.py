@@ -41,8 +41,12 @@ def inicio(paramentro):
     disab = False
     if data != False:
         disab = True
-    modelar_od = col_1_1.checkbox('OD', value=paramentro['m_od'], disabled=disab)
-    modelar_dbo = col_1_1.checkbox('DBO', value=paramentro['m_dbo'], disabled=disab)
+        k2_calc_ask = paramentro['é_calc']
+    else:
+        
+        k2_calc_ask = False
+    modelar_od = col_1_1.checkbox('OD e DBO', value=paramentro['m_od'], disabled=disab)
+    modelar_dbo = modelar_od
     modelar_n = col_1_1.checkbox('Nitrogênio', value=paramentro['m_n'], disabled=disab)
     modelar_p = col_1_2.checkbox('Fósforo', value=paramentro['m_p'], disabled=disab)
     modelar_colif = col_1_2.checkbox('Coliformes', value=paramentro['m_c'], disabled=disab)
@@ -57,7 +61,7 @@ def inicio(paramentro):
     
     lista_modelagem = {'m_od': modelar_od, 'm_dbo': modelar_dbo, 'm_n': modelar_n,
                        'm_p': modelar_p, 'm_c': modelar_colif, 'n_tb': n_tributarios,
-                       's_t': serie_tempo}
+                       's_t': serie_tempo, 'é_calc': k2_calc_ask}
 
     lista_tabs = ["tab0"]
     labels = ["Rio principal"]
@@ -93,7 +97,7 @@ def dados_iniciais(data, lista_modelagem, n_tributarios, labels, lista_tabs):
                     'Largura (m)',
                     'Ângulo esquerdo (°)',
                     'Ângulo direito (°)']
-    list_valores_hid = [None, None, 0.0, 0.0, 0.0, 0.0, 0.0]
+    list_valores_hid = [None, None, 0.0, 0.001, 5, 45, 45]
 
     for i in range(n_tributarios + 1):
         
@@ -124,7 +128,7 @@ def dados_iniciais(data, lista_modelagem, n_tributarios, labels, lista_tabs):
                 dt_desague = data['Dados gerais']['l_des'][i - 1] - 1
                 dt_desague = 0 if dt_desague < 0 else dt_desague
             else:
-                af_valor = [0.0, None, None, None]
+                af_valor = [0.0, None, None, 0.0]
                 dt_desague = 0
             desague = coll1.selectbox(str(i) + '. Deságua no:', labels_mod, index=dt_desague)
             coll2.markdown("Ponto de deságue em relação o " + desague + ":")
@@ -147,18 +151,22 @@ def dados_iniciais(data, lista_modelagem, n_tributarios, labels, lista_tabs):
             min_value=0.1, step=1e-2, format="%.2f")
         
         tipo_entrada = col_11.radio(str(i) + ". Tipo de entrada dos dados espaciais:",
-                                    ["Manual", "Intervalo","GeoJSON"],
+                                    ["Manual", "Intervalo", "GeoJSON"],
                                     horizontal=True)
         df_esp = pd.DataFrame(columns=[str(i) + '. Latitude (UTM)', str(i) + '. Longitude (UTM)',
                                         str(i) + '. Altitude (m)', str(i) + '. Comprimento (m)'])
 
         if tipo_entrada == "Intervalo":
+            if data != False:
+                valor_comp = data['Dados gerais']['l_c'][i][-1]
+            else:
+                valor_comp = 150.0
             col0_1, col0_2 = expander.columns(2)
 
             comp = col0_1.number_input(
                 'Comprimento do ' + str(labels[i]) + ' (m)'
                 + ' *a ser modelado*',
-                min_value=150.0, step=1e-2, format="%.2f")
+                min_value= 150.0, value=valor_comp, step=1e-2, format="%.2f")
             
             col1_1, col1_2 = col0_2.columns(2)
             
@@ -179,7 +187,7 @@ def dados_iniciais(data, lista_modelagem, n_tributarios, labels, lista_tabs):
                 df_esp[str(i) + '. Altitude (m)'] = data['Dados gerais']['l_a'][i]
                 df_esp[str(i) + '. Comprimento (m)'] = data['Dados gerais']['l_c'][i]
 
-            expander.warning('''Adicionar ou a **Latitude e Longitude** ou o **Comprimento**.''',
+            expander.warning('''Adicionar ou a **Longitude e Latitude** ou o **Comprimento**.''',
                     icon="❕")
             df_espacial = expander.data_editor(df_esp,
                                                num_rows="dynamic",
@@ -214,7 +222,7 @@ def dados_iniciais(data, lista_modelagem, n_tributarios, labels, lista_tabs):
 
                 altitude = list(gdf.iloc[:,1])
                 comprimento = []
-                for ct in range(len(altitude)):
+                for _ in range(len(altitude)):
                     comprimento.append(None)
         if preecheu:
             col1, col2 = expander.columns(2)
@@ -272,7 +280,7 @@ def dados_iniciais(data, lista_modelagem, n_tributarios, labels, lista_tabs):
             list_name = [str(i) + '. Q (m³/s)']
             list_valores = [[0.0]] 
 
-        if lista_modelagem['m_od']:
+        if lista_modelagem['m_od'] or lista_modelagem['m_dbo']:
             list_name.extend(['OD (mg/L)',
                                 'DBO (mg/L)'])
             list_valores.extend([[0.0], [0.0]])
@@ -296,7 +304,7 @@ def dados_iniciais(data, lista_modelagem, n_tributarios, labels, lista_tabs):
             if lista_modelagem['s_t']:
                 list_valores[0] = pd.to_datetime(list_valores[0])
 
-        if lista_modelagem['s_t']:
+        if lista_modelagem['s_t'] and data == False:
             num_rows = "dynamic"
         else:
             num_rows = "fixed"
@@ -312,6 +320,8 @@ def dados_iniciais(data, lista_modelagem, n_tributarios, labels, lista_tabs):
                                                     format="MM.DD.YYYY", step=1),
                                                 },
                                             disabled=[colmdisab])
+            
+            
             dias = list(df_conc_f[list_name[0]])
             
         else:
@@ -344,7 +354,6 @@ def dados_iniciais(data, lista_modelagem, n_tributarios, labels, lista_tabs):
 
             else:
                 list_valores_f.append(lista)
-    
 
         expander.divider()
         expander.markdown(":orange[Seções transversais do " + str(labels[i]) + ":]")
@@ -404,50 +413,48 @@ def coeficientes(data, lista_modelagem, n_tributarios, labels, lista_tabs, dias)
 
         if i == 0: 
             if lista_modelagem['m_od']:
-                lista_modelagem['é_calc'] = expander.toggle('Coeficiente k2 será tabelado.', value=False, disabled=disab)
+                lista_modelagem['é_calc'] = expander.toggle('Coeficiente k2 será tabelado.', value=lista_modelagem['é_calc'], disabled=disab)
 
-                list_name = ['Temperatura (°C)']
-                if lista_modelagem['é_calc']:
-                    list_name.append('k2 (1/d)')
-                if lista_modelagem['m_od']:
-                    list_name.extend(['k1 (1/d)',
-                                    'kd (1/d)',
-                                    'ks (1/d)',
-                                    'lrd (gDBO5/m.d)',
-                                    'sd (1/d)'])
-                if lista_modelagem['m_od'] == True and lista_modelagem['m_n'] == True:
-                    list_name.append('O2namon (mgO2/mgNamon oxid)')
-                if lista_modelagem['m_n']:
-                    list_name.extend(['koa (1/d)',
-                                    'kso (1/d)',
-                                    'kan (1/d)',
-                                    'Snamon (g/m2.d)',
-                                    'knn (1/d)',
-                                    'knitr (1/d)'])
-                if lista_modelagem['m_p']:
-                    list_name.extend(['koi (1/d)',
-                                        'kspo (1/d)',
-                                        'spinorg (1/d)'])
-                if lista_modelagem['m_c']:
-                    list_name.append('kb (1/d)')
+            list_name = ['Temperatura (°C)']
+            if lista_modelagem['é_calc']:
+                list_name.append('k2 (1/d)')
+            if lista_modelagem['m_od']:
+                list_name.extend(['k1 (1/d)',
+                                'kd (1/d)',
+                                'ks (1/d)',
+                                'lrd (gDBO5/m.d)',
+                                'sd (1/d)'])
+            if lista_modelagem['m_od'] == True and lista_modelagem['m_n'] == True:
+                list_name.append('O2namon (mgO2/mgNamon oxid)')
+            if lista_modelagem['m_n']:
+                list_name.extend(['koa (1/d)',
+                                'kso (1/d)',
+                                'kan (1/d)',
+                                'Snamon (g/m2.d)',
+                                'knn (1/d)',
+                                'knitr (1/d)'])
+            if lista_modelagem['m_p']:
+                list_name.extend(['koi (1/d)',
+                                    'kspo (1/d)',
+                                    'spinorg (1/d)'])
+            if lista_modelagem['m_c']:
+                list_name.append('kb (1/d)')
 
-                lista_coeficiente = [list_name]
+            lista_coeficiente = [list_name]
             
-            else:
-                lista_modelagem['é_calc'] = False
 
         list_name_c = ['Latitude (UTM)',
                     'Longitude (UTM)',
                     'Comprimento (m)']
         list_valores_c = [None, None, 0.0]
-        if lista_modelagem['é_calc'] == False and lista_modelagem['m_od'] == True:
+        if lista_modelagem['é_calc'] == False and (lista_modelagem['m_od'] or lista_modelagem['m_dbo']):
             list_name_c.append('k2 máximo (1/d)')
             list_valores_c.append(1000.0)
 
 
 
 
-        col_21.warning('''Adicionar ou a **Latitude e Longitude** ou o **Comprimento**.''',
+        col_21.warning('''Adicionar ou a **Longitude e Latitude** ou o **Comprimento**.''',
                              icon="❕")
 
         expander.markdown(":green[Variáveis do " + str(labels[i]) +":]")
@@ -459,11 +466,11 @@ def coeficientes(data, lista_modelagem, n_tributarios, labels, lista_tabs, dias)
             min_value=0, value=qt_coe, disabled=disab)
         lista_n_pontos.append(n_pontos)
         df_coef = pd.DataFrame({str(i) + '. Descrição': list_name_c})
-        labels_c = []  
+        labels_c = []
         for k in range(n_pontos + 1):
             labels_c.append(str(i) + '. Ponto ' + str(k))
             if data != False:
-                df_coef['Ponto ' + str(k)] = data['Coeficientes']['l_coe'][i+1][0][k]
+                df_coef['Ponto ' + str(k)] = data['Coeficientes']['l_coe'][i+1][k][0]
 
             else:
                 df_coef['Ponto ' + str(k)] = list_valores_c
@@ -480,7 +487,7 @@ def coeficientes(data, lista_modelagem, n_tributarios, labels, lista_tabs, dias)
             if lista_modelagem['é_calc']:
                 list_name_c2.append('k2 (1/d)')
                 list_valores_c2.append([0.0])
-            if lista_modelagem['m_od']:
+            if lista_modelagem['m_od'] or lista_modelagem['m_dbo']:
                 list_name_c2.extend(['k1 (1/d)',
                                 'kd (1/d)',
                                 'ks (1/d)',
@@ -601,10 +608,11 @@ def fun_contrib_retirad(data, n_tributarios, labels, lista_tabs, list_name, list
                                           value=on_ret, disabled=disab)
         ret = []
         n_pontos_r = 0
+        
         if retiradas:
             col4_1, col4_2 = expander.columns(2)
             col4_1.markdown(":blue[Retiradas do " + str(labels[j]) + ":]")
-            col4_2.warning('''Adicionar ou a **Latitude e Longitude** ou o **Comprimento**.''',
+            col4_2.warning('''Adicionar ou a **Longitude e Latitude** ou o **Comprimento**.''',
                            icon="❕")
             n_pontos_r = col4_1.number_input(
                 str(j) + '. Quantidade de ponto de captação:',
@@ -612,14 +620,17 @@ def fun_contrib_retirad(data, n_tributarios, labels, lista_tabs, list_name, list
             dfret = pd.DataFrame({str(j) + '. R: Variável': list_name_cr})
             labels_r = []
             for k in range(n_pontos_r):
-                labels_r.append(str(j) + '. Ponto ' + str(k))
+                labels_r.append(str(j) + '. Ponto ' + str(k + 1))
+                
+                    
                 if data != False:
-                    dfret['Ponto ' + str(k)] = data['Contr e Retir']['l_r'][j][0][k]
+                    dfret['Ponto ' + str(k + 1)] = data['Contr e Retir']['l_r'][j][k][0]
 
                 else:
-                    dfret['Ponto ' + str(k)] = list_valores_cr
+                    dfret['Ponto ' + str(k + 1)] = list_valores_cr
             df_ret_f = expander.data_editor(dfret, disabled=[str(j) + '. R: Variável'])
 
+            
 
             tabs_r = expander.tabs(labels_r)
             for tr in range(len(labels_r)):
@@ -630,9 +641,8 @@ def fun_contrib_retirad(data, n_tributarios, labels, lista_tabs, list_name, list
                     
                 list_valores_r = [[0.0]]
                 df_ret2 = pd.DataFrame(columns=list_name_r)
-
                 if data != False:
-                    list_valores_r = data['Contr e Retir']['l_ep'][j][tr][1]
+                    list_valores_r = data['Contr e Retir']['l_r'][j][tr][1]
 
                 if lista_modelagem['s_t'] and data == False:
                     l_valor_r = []
@@ -665,7 +675,7 @@ def fun_contrib_retirad(data, n_tributarios, labels, lista_tabs, list_name, list
                     else:
                         list_valores_r.append(list(df_ret2_f[list_name_r[rf]]))    
 
-                ret.append([list(df_ret_f['Ponto ' + str(tr)]), list_valores_r])
+                ret.append([list(df_ret_f['Ponto ' + str(tr + 1)]), list_valores_r])
 
 
         expander.divider()
@@ -676,7 +686,7 @@ def fun_contrib_retirad(data, n_tributarios, labels, lista_tabs, list_name, list
         if contr_pontual:
             col4_1, col4_2 = expander.columns(2)
             col4_1.markdown(":blue[Contribuições pontuais do " + str(labels[j]) + ":]")
-            col4_2.warning('''Adicionar ou a **Latitude e Longitude** ou o **Comprimento**.''',
+            col4_2.warning('''Adicionar ou a **Longitude e Latitude** ou o **Comprimento**.''',
                            icon="❕")
             n_pontos_ep = col4_1.number_input(
                 str(j) + '. Quantidade de pontos de entradas pontuais:',
@@ -686,10 +696,10 @@ def fun_contrib_retirad(data, n_tributarios, labels, lista_tabs, list_name, list
             for k in range(n_pontos_ep):
                 labels_ep.append(str(j) + '. Ponto ' + str(k))
                 if data != False:
-                    dfep['Ponto ' + str(k)] = data['Contr e Retir']['l_ep'][j][0][k]
+                    dfep['Ponto ' + str(k + 1)] = data['Contr e Retir']['l_ep'][j][k][0]
 
                 else:
-                    dfep['Ponto ' + str(k)] = list_valores_cr
+                    dfep['Ponto ' + str(k + 1)] = list_valores_cr
             df_ep_f = expander.data_editor(dfep, disabled=[str(j) + '. EP: Variável'])
 
 
@@ -738,7 +748,7 @@ def fun_contrib_retirad(data, n_tributarios, labels, lista_tabs, list_name, list
                     else:
                         list_valores_ep.append(list(df_ep2_f[list_name_ep[epf]]))    
 
-                ep.append([list(df_ep_f['Ponto ' + str(tep)]), list_valores_ep])
+                ep.append([list(df_ep_f['Ponto ' + str(tep + 1)]), list_valores_ep])
 
 
         expander.divider()
@@ -749,7 +759,7 @@ def fun_contrib_retirad(data, n_tributarios, labels, lista_tabs, list_name, list
         if contr_difusa:
             col4_1, col4_2 = expander.columns(2)
             col4_1.markdown(":blue[Contribuições difusa do " + str(labels[j]) + ":]")
-            col4_2.warning('''Adicionar ou a **Latitude e Longitude** ou o **Comprimento**.''',
+            col4_2.warning('''Adicionar ou a **Longitude e Latitude** ou o **Comprimento**.''',
                            icon="❕")
             n_pontos_ed = col4_1.number_input(
                 str(j) + '. Quantidade de pontos de entradas difusas:',
@@ -767,10 +777,10 @@ def fun_contrib_retirad(data, n_tributarios, labels, lista_tabs, list_name, list
             for k in range(n_pontos_ed):
                 labels_ed.append(str(j) + '. Ponto ' + str(k))
                 if data != False:
-                    dfed['Ponto ' + str(k)] = data['Contr e Retir']['l_ed'][j][0][k]
+                    dfed['Ponto ' + str(k + 1)] = data['Contr e Retir']['l_ed'][j][k][0]
 
                 else:
-                    dfed['Ponto ' + str(k)] = list_valores_ed
+                    dfed['Ponto ' + str(k + 1)] = list_valores_ed
             df_ed_f = expander.data_editor(dfed, disabled=[str(j) + '. ED: Variável'])
 
 
@@ -819,7 +829,7 @@ def fun_contrib_retirad(data, n_tributarios, labels, lista_tabs, list_name, list
                     else:
                         list_valores_ed.append(list(df_ed2_f[list_name_ed[edf]]))    
 
-                ed.append([list(df_ed_f['Ponto ' + str(ted)]), list_valores_ed])
+                ed.append([list(df_ed_f['Ponto ' + str(ted + 1)]), list_valores_ed])
 
         expander.divider()
         list_retiradas.append(ret)
