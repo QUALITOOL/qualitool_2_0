@@ -43,13 +43,11 @@ if n_tributarios > 0:
 else:
     ordem_modelagem = [0]
 
-print('aqui4')
 lista_final, list_entr = modelagem_Final(list_tranfor, ponto_af, lista_modelagem,
                                             ordem_desague, ordem_modelagem)
-print('aqui5')
 
 lidt_df = []
-for r in ordem_modelagem:
+for r in range(len(n_tributarios + 1)):
     rio = lista_final[r]
     df = None
     obj_to_dict = {'rio': [],'latitude': [], 'longitude': [], 'altitude': [], 'comprimento': [], 'vazao': [],
@@ -111,7 +109,6 @@ for r in ordem_modelagem:
     df = pd.DataFrame(obj_to_dict)
     lidt_df.append(df)
 
-print('aqui3')
-plotar(n_tributarios, lista_modelagem, lidt_df, list_entr, labels, zona, hemisferio, dias, ordem_modelagem)
+plotar(n_tributarios, lista_modelagem, lidt_df, list_entr, labels, zona, hemisferio, dias)
 
 st.session_state['reslt_model'] = []

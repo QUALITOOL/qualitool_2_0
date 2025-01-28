@@ -419,10 +419,8 @@ def plot_map(maps, df_new, colun, title, inverse_b):
     return
 
 
-def plotar(n_tributarios, lista_modelagem, lidt_df, list_entr, labels, zona, hemisferio, dias, ordem_modelagem):
+def plotar(n_tributarios, lista_modelagem, lidt_df, list_entr, labels, zona, hemisferio, dias):
 
-    lidt_df.reverse()
-    ordem_modelagem.reverse()
     list_tab = ['Gráficos do Rio Principal', 'Tabelas']
     str_lat = str(lidt_df[0]['latitude'][0])
     if str_lat != 'nan' and str_lat != 'None':
@@ -596,7 +594,7 @@ def plotar(n_tributarios, lista_modelagem, lidt_df, list_entr, labels, zona, hem
 
     with result_tabs[1]:
         for r1 in range(n_tributarios + 1):
-            ex = st.expander('Resultados do ' + labels[ordem_modelagem[r1]])
+            ex = st.expander('Resultados do ' + labels[r1])
             ex.write(lidt_df[r1])
 
         df_new = pd.concat(lidt_df)

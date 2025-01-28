@@ -43,7 +43,6 @@ if botao:
     list_tranfor = transformacao(lista_modelagem, lista_parametros, lista_coeficientes,
                                 lista_contr_retir, list_name_salvo)
     
-    print('aqui')
     st.session_state['reslt_model'] = [n_trib, list_tranfor, ponto_af, lista_modelagem,
                                     ordem_desague, dias, labels, zona, hemisferio]
 
