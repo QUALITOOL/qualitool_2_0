@@ -47,7 +47,7 @@ lista_final, list_entr = modelagem_Final(list_tranfor, ponto_af, lista_modelagem
                                             ordem_desague, ordem_modelagem)
 
 lidt_df = []
-for r in range(len(n_tributarios)+ 1):
+for r in range(n_tributarios+ 1):
     rio = lista_final[r]
     df = None
     obj_to_dict = {'rio': [],'latitude': [], 'longitude': [], 'altitude': [], 'comprimento': [], 'vazao': [],
