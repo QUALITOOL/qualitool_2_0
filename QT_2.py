@@ -15,7 +15,7 @@ pg = st.navigation([st.Page("pages/introducao.py", title="QUALITOOL 2.0"),
                     position="hidden")
 
 # image = Image.open('C:\Flavya\MQA\QUALI_TOOL\QT_2_0\qualitool_local\Meu_rep\imagens\LOGO.png')
-image = Image.open('qualitool_2_0\imagens\LOGO.png')
+image = Image.open('imagens/LOGO.png')
 
 bar = st.sidebar
 bar.image(image)
