@@ -694,7 +694,7 @@ def fun_contrib_retirad(data, n_tributarios, labels, lista_tabs, list_name, list
             dfep = pd.DataFrame({str(j) + '. EP: Variável': list_name_cr})
             labels_ep = []
             for k in range(n_pontos_ep):
-                labels_ep.append(str(j) + '. Ponto ' + str(k))
+                labels_ep.append(str(j) + '. Ponto ' + str(k + 1))
                 if data != False:
                     dfep['Ponto ' + str(k + 1)] = data['Contr e Retir']['l_ep'][j][k][0]
 
@@ -775,7 +775,7 @@ def fun_contrib_retirad(data, n_tributarios, labels, lista_tabs, list_name, list
             dfed = pd.DataFrame({str(j) + '. ED: Variável': list_name_ed})
             labels_ed = []
             for k in range(n_pontos_ed):
-                labels_ed.append(str(j) + '. Ponto ' + str(k))
+                labels_ed.append(str(j) + '. Ponto ' + str(k + 1))
                 if data != False:
                     dfed['Ponto ' + str(k + 1)] = data['Contr e Retir']['l_ed'][j][k][0]
 

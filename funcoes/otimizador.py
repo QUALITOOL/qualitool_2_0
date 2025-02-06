@@ -131,7 +131,9 @@ def calc_aptidao(seq_coef, lista_lista_pos, list_tranfor, fixar_coef,
                 else:
                     lista_coef_Nash_Sutcliffe = [9999]
 
-            lista_aptidoes.append(round((np.mean(lista_coef_Nash_Sutcliffe)), precisao))
+            # lista_aptidoes.append(round((np.mean(lista_coef_Nash_Sutcliffe)), precisao))
+            lista_aptidoes.append(round(np.mean(lista_coef_Nash_Sutcliffe), precisao))
+
 
     return lista_aptidoes
 

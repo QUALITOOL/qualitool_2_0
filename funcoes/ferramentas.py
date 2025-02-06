@@ -437,6 +437,7 @@ def plotar(n_tributarios, lista_modelagem, lidt_df, list_entr, labels, zona, hem
 
         else:
             df = lidt_df[0]
+            
             fig = make_subplots(specs=[[{"secondary_y": True}]])
             fig.update_layout(title_text="Concentrações",
                                 title_font_color="teal")
@@ -506,8 +507,7 @@ def plotar(n_tributarios, lista_modelagem, lidt_df, list_entr, labels, zona, hem
             ),)
 
         for pt in range(len(list_entr) - 1):
-
-            if str(list_entr[0 + 1].descricao) == 'nan':
+            if str(list_entr[pt + 1].descricao) == 'nan'or str(list_entr[pt + 1].descricao) == 'None':
 
                 fig.add_vline(
                     x=list_entr[pt + 1].comprimento,
@@ -572,7 +572,7 @@ def plotar(n_tributarios, lista_modelagem, lidt_df, list_entr, labels, zona, hem
         
         for pt in range(len(list_entr) - 1):
 
-            if str(list_entr[0 + 1].descricao) == 'nan' or str(list_entr[0 + 1].descricao) == 'None':
+            if str(list_entr[pt + 1].descricao) == 'nan' or str(list_entr[pt + 1].descricao) == 'None':
 
                 fig2.add_vline(
                     x=list_entr[pt + 1].comprimento,
@@ -1104,7 +1104,7 @@ def ordem_analise_sensibilidade(list_tranfor, ponto_af, lista_modelagem, ordem_d
                                 lista_hidr_model, ordem_modelagem):
 
 
-    an_ses = st.toggle(":black[Gerar a análise de sensibilidade dos coeficientes, com base o intervalo fornecido no Rio Principal.]")
+    an_ses = st.toggle("Gerar a análise de sensibilidade dos coeficientes, com base o intervalo fornecido no Rio Principal.")
 
     if an_ses:
         par_as = st.expander(":grey[Ajuste no intervalo de busca (Opcional).]")
@@ -1446,6 +1446,9 @@ def estrutura_calibracao(list_tranfor, fixar_coef, seq_coef, list_ordem_coef, li
     w = lista_par_pos[2]  # Inércia
     c1 = lista_par_pos[3]  # Componente cognitiva (pessoal)
     c2 = lista_par_pos[4]  # Componente social (global)
+    # tam_enxame = 15
+    # n_ger = 30
+
     random.seed()
 
 
@@ -1646,7 +1649,7 @@ def tabelar(lista_modelagem):
                                 0, 0, 0, 0, 0, 0)
 
     container4 = st.container(border=True)
-    container4.markdown(":teal[O modelo adotará os seguintes valores:]")
+    container4.markdown("O modelo adotará os seguintes valores:")
     col_1, col_2, col_3, col_4 = container4.columns(4)
     if lista_modelagem['m_od']:
         col_1.write('OD e DBO')

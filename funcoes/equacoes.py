@@ -172,25 +172,21 @@ def func_hidraulica(lista_hidraulica, lista_s_pontual, lista_e_pontual, lista_e_
     a_dir = lista_s_transversal[0].ang_direito
     l_rio = lista_s_transversal[0].largura_rio
     rug = lista_s_transversal[0].rugosidade_n
-    print(len(lista_hidraulica))
     for i in range(len(lista_hidraulica)):
 
         # ENTRADAS E SAÍDAS
         for j in range(len(lista_e_pontual)):
             if lista_hidraulica[i].comprimento == lista_e_pontual[j].comprimento:
                 vazao_atual += lista_e_pontual[j].vazao
-                print('aqui pontual')
         
         if len(lista_s_pontual) > 0:
             for k in range(len(lista_s_pontual)):
                 if lista_hidraulica[i].comprimento == lista_s_pontual[k].comprimento:
                     vazao_atual -= lista_s_pontual[k].vazao
-                    print('aqui saída')
         if len(lista_e_difusa) > 0:
             for n in range(len(lista_e_difusa)):
                 if lista_e_difusa[n].comprimento_inicial <= lista_hidraulica[i].comprimento < lista_e_difusa[n].comprimento_final:
                     
-                    print('aqui difusa')
                     fator_divisor = (lista_e_difusa[n].comprimento_final - lista_e_difusa[n].comprimento_inicial) / discretizacao
                     vazao_atual += (lista_e_difusa[n].vazao / fator_divisor)
 
@@ -240,7 +236,6 @@ def func_hidraulica(lista_hidraulica, lista_s_pontual, lista_e_pontual, lista_e_
 
         final = Quanti_Qualitativo(lista_hidraulica[i], None, None, None)
         lista_final.append(copy.deepcopy(final))
-    print('acabou')
     
     return lista_final
 
@@ -256,9 +251,9 @@ def k2(hidraulica):
             k_2 = 5.3 * (hidraulica.velocidade ** 0.67) * (hidraulica.profundidade ** -1.85)
     elif 0.03 <= hidraulica.vazao <= 8.5:
         if 0.03 <= hidraulica.vazao < 0.3:
-            k_2 = 31.6 * hidraulica.velocidade * hidraulica.inclinacao
+            k_2 = 31.6 * hidraulica.velocidade * hidraulica.inclinacao * 1000
         else:
-            k_2 = 15.4 * hidraulica.velocidade * hidraulica.inclinacao
+            k_2 = 15.4 * hidraulica.velocidade * hidraulica.inclinacao * 1000
     else:
         k_2 = 20.74 * (hidraulica.vazao ** -0.42)
     return k_2
@@ -1111,12 +1106,13 @@ def modelagem_Final_2(lista_rio, ponto_af, lista_modelagem,
                     ordem_desague, ordem_modelagem, lista_hidr_model):
     
     lista_completa_final = []
+    marc = 0
     for ior in ordem_modelagem:
         dados = lista_rio[ior]
-        lista_final = modelagem_2(lista_hidr_model[ior], dados.lista_e_coeficientes, dados.lista_s_pontual,
+        lista_final = modelagem_2(lista_hidr_model[marc], dados.lista_e_coeficientes, dados.lista_s_pontual,
                                 dados.lista_e_pontual, dados.lista_e_difusa, dados.rio,
                                 dados.discretizacao, lista_modelagem)
-        
+        marc += 1
         if ior != 0:
             comp = menor_dist2(lista_rio[ordem_desague[ior - 1]], ponto_af[ior - 1][1],
                                ponto_af[ior - 1][2], ponto_af[ior - 1][3])
