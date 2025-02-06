@@ -53,7 +53,7 @@ st.write("   ")
 st.markdown('<h6 style="text-align: right;">Apoio:</h6>',
             unsafe_allow_html=True)
 
-imagem_1 = Image.open(r'C:\Flavya\MQA\QUALI_TOOL\QT_2_0\qualitool_local\Meu_rep\imagens\logos_geral.png')
-# imagem_1 = Image.open('logos_geral.png')
+# imagem_1 = Image.open(r'C:\Flavya\MQA\QUALI_TOOL\QT_2_0\qualitool_local\Meu_rep\imagens\logos_geral.png')
+imagem_1 = Image.open('imagens/logos_geral.png')
 st.image(imagem_1, output_format="PNG")
 
