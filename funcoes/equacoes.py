@@ -374,8 +374,8 @@ def p_inorg(tempo_delta, coeficientes, concentracoes, hidraulica):
 
 
 def e_coli(tempo_delta, coeficientes, concentracoes):
-    conc = - coeficientes.k_b * concentracoes.conc_e_coli * (1.07 ** (coeficientes.temperatura - 20))
-    conc_e_coli = concentracoes.conc_e_coli + (tempo_delta * conc)
+    conc = coeficientes.k_b * concentracoes.conc_e_coli * (1.07 ** (coeficientes.temperatura - 20)) * tempo_delta
+    conc_e_coli = concentracoes.conc_e_coli - conc
     return conc_e_coli
 
 
@@ -442,30 +442,6 @@ def modelagem(lista_final, lista_e_coeficientes, lista_s_pontual, lista_e_pontua
             concentracoes = copy.deepcopy(lista_e_pontual[0].concentracoes)
 
 
-        else:
-            tempo_delta = discretizacao / (hidraulica.velocidade * 86400)
-            
-            if lista_modelagem['m_n']:
-                f_nitr = 1 - np.exp(1) ** (- coeficientes.k_nit_od * concentracoes.conc_od)
-            else:
-                f_nitr = 0 * concentracoes.conc_od
-            
-            if lista_modelagem['m_od']:
-                concentracoes.conc_od, od_saturacao, anaerobiose = od(tempo_delta, coeficientes, concentracoes, hidraulica, f_nitr, anaerobiose, lista_modelagem['m_n'])
-            if lista_modelagem['m_od']:
-                concentracoes.conc_dbo, anaerobiose = dbo(tempo_delta, coeficientes, concentracoes, hidraulica, anaerobiose, od_saturacao)
-            if lista_modelagem['m_n']:
-                concentracoes.conc_no = no(tempo_delta, coeficientes, concentracoes)
-                concentracoes.conc_n_amon = n_amon(tempo_delta, coeficientes, concentracoes, hidraulica, f_nitr)
-                concentracoes.conc_nitrito = nitrito(tempo_delta, coeficientes, concentracoes, f_nitr)
-                concentracoes.conc_nitrato = nitrato(tempo_delta, coeficientes, concentracoes, f_nitr)
-            if lista_modelagem['m_p']:
-                concentracoes.conc_p_org = p_org(tempo_delta, coeficientes, concentracoes)
-                concentracoes.conc_p_inorg = p_inorg(tempo_delta, coeficientes, concentracoes, hidraulica)
-                concentracoes.conc_p_total = concentracoes.conc_p_org + concentracoes.conc_p_inorg
-            if lista_modelagem['m_c']:
-                concentracoes.conc_e_coli = e_coli(tempo_delta, coeficientes, concentracoes)
-          
         for k in range(len(lista_e_pontual)):
             ep_concetracoes = lista_e_pontual[k].concentracoes
             if hidraulica.comprimento == lista_e_pontual[k].comprimento:
@@ -508,11 +484,37 @@ def modelagem(lista_final, lista_e_coeficientes, lista_s_pontual, lista_e_pontua
                         concentracoes.conc_p_total = concentracoes.conc_p_org + concentracoes.conc_p_inorg
                     if lista_modelagem['m_c']:
                         concentracoes.conc_e_coli = mistura(concentracoes.conc_e_coli, ed_concetracoes.conc_e_coli, hidraulica.vazao, vazao_difusa)
-    
+            
+
         if len(lista_s_pontual) > 0 :
             for p in range(len(lista_s_pontual)):
                     if hidraulica.comprimento == lista_s_pontual[p].comprimento:
                         vazao -= lista_s_pontual[p].vazao
+        
+
+        tempo_delta = discretizacao / (hidraulica.velocidade * 86400)
+        
+        if lista_modelagem['m_n']:
+            f_nitr = 1 - np.exp(1) ** (- coeficientes.k_nit_od * concentracoes.conc_od)
+        else:
+            f_nitr = 0 * concentracoes.conc_od
+        
+        if lista_modelagem['m_od']:
+            concentracoes.conc_od, od_saturacao, anaerobiose = od(tempo_delta, coeficientes, concentracoes, hidraulica, f_nitr, anaerobiose, lista_modelagem['m_n'])
+        if lista_modelagem['m_od']:
+            concentracoes.conc_dbo, anaerobiose = dbo(tempo_delta, coeficientes, concentracoes, hidraulica, anaerobiose, od_saturacao)
+        if lista_modelagem['m_n']:
+            concentracoes.conc_no = no(tempo_delta, coeficientes, concentracoes)
+            concentracoes.conc_n_amon = n_amon(tempo_delta, coeficientes, concentracoes, hidraulica, f_nitr)
+            concentracoes.conc_nitrito = nitrito(tempo_delta, coeficientes, concentracoes, f_nitr)
+            concentracoes.conc_nitrato = nitrato(tempo_delta, coeficientes, concentracoes, f_nitr)
+        if lista_modelagem['m_p']:
+            concentracoes.conc_p_org = p_org(tempo_delta, coeficientes, concentracoes)
+            concentracoes.conc_p_inorg = p_inorg(tempo_delta, coeficientes, concentracoes, hidraulica)
+            concentracoes.conc_p_total = concentracoes.conc_p_org + concentracoes.conc_p_inorg
+        if lista_modelagem['m_c']:
+            concentracoes.conc_e_coli = e_coli(tempo_delta, coeficientes, concentracoes)
+          
  
         lista_final[i].concentracoes = copy.deepcopy(concentracoes)
         lista_final[i].coeficientes = copy.deepcopy(coeficientes)
@@ -716,28 +718,6 @@ def modelagem_as(lista_final, e_coeficientes, lista_s_pontual, lista_e_pontual,
         if i == 0:
             concentracoes = copy.deepcopy(lista_e_pontual[0].concentracoes)
 
-        else:
-            tempo_delta = discretizacao / (hidraulica.velocidade * 86400)
-            
-            if lista_modelagem['m_n']:
-                f_nitr = 1 - np.exp(1) ** (- coeficientes.k_nit_od * concentracoes.conc_od)
-            else:
-                f_nitr = 0 * concentracoes.conc_od
-            
-            if (lista_modelagem['m_od']) and (id_coef in coef_od):
-                concentracoes.conc_od, od_saturacao, anaerobiose = cb_od(tempo_delta, coeficientes, concentracoes, hidraulica, f_nitr, anaerobiose, lista_modelagem['m_n'])
-                concentracoes.conc_dbo, anaerobiose = cb_dbo(tempo_delta, coeficientes, concentracoes, hidraulica, anaerobiose, od_saturacao)
-            if (lista_modelagem['m_n']) and (id_coef in coef_n):
-                concentracoes.conc_no = cb_no(tempo_delta, coeficientes, concentracoes)
-                concentracoes.conc_n_amon = cb_n_amon(tempo_delta, coeficientes, concentracoes, hidraulica, f_nitr)
-                concentracoes.conc_nitrito = cb_nitrito(tempo_delta, coeficientes, concentracoes, f_nitr)
-                concentracoes.conc_nitrato = cb_nitrato(tempo_delta, coeficientes, concentracoes, f_nitr)
-            if (lista_modelagem['m_p']) and (id_coef in coef_p):
-                concentracoes.conc_p_org = cb_p_org(tempo_delta, coeficientes, concentracoes)
-                concentracoes.conc_p_inorg = cb_p_inorg(tempo_delta, coeficientes, concentracoes, hidraulica)
-                concentracoes.conc_p_total = concentracoes.conc_p_org + concentracoes.conc_p_inorg
-            if (lista_modelagem['m_c']) and (id_coef in coef_cf):
-                concentracoes.conc_e_coli = cb_e_coli(tempo_delta, coeficientes, concentracoes)
           
         for k in range(len(lista_e_pontual)):
             ep_concetracoes = lista_e_pontual[k].concentracoes
@@ -781,11 +761,34 @@ def modelagem_as(lista_final, e_coeficientes, lista_s_pontual, lista_e_pontual,
                         concentracoes.conc_p_total = concentracoes.conc_p_org + concentracoes.conc_p_inorg
                     if (lista_modelagem['m_c']) and (id_coef in coef_cf):
                         concentracoes.conc_e_coli = mistura(concentracoes.conc_e_coli, ed_concetracoes.conc_e_coli, hidraulica.vazao, vazao_difusa)
-    
+            
+
         if len(lista_s_pontual) > 0 :
             for p in range(len(lista_s_pontual)):
                     if hidraulica.comprimento == lista_s_pontual[p].comprimento:
                         vazao -= lista_s_pontual[p].vazao
+
+        tempo_delta = discretizacao / (hidraulica.velocidade * 86400)
+            
+        if lista_modelagem['m_n']:
+            f_nitr = 1 - np.exp(1) ** (- coeficientes.k_nit_od * concentracoes.conc_od)
+        else:
+            f_nitr = 0 * concentracoes.conc_od
+        
+        if (lista_modelagem['m_od']) and (id_coef in coef_od):
+            concentracoes.conc_od, od_saturacao, anaerobiose = cb_od(tempo_delta, coeficientes, concentracoes, hidraulica, f_nitr, anaerobiose, lista_modelagem['m_n'])
+            concentracoes.conc_dbo, anaerobiose = cb_dbo(tempo_delta, coeficientes, concentracoes, hidraulica, anaerobiose, od_saturacao)
+        if (lista_modelagem['m_n']) and (id_coef in coef_n):
+            concentracoes.conc_no = cb_no(tempo_delta, coeficientes, concentracoes)
+            concentracoes.conc_n_amon = cb_n_amon(tempo_delta, coeficientes, concentracoes, hidraulica, f_nitr)
+            concentracoes.conc_nitrito = cb_nitrito(tempo_delta, coeficientes, concentracoes, f_nitr)
+            concentracoes.conc_nitrato = cb_nitrato(tempo_delta, coeficientes, concentracoes, f_nitr)
+        if (lista_modelagem['m_p']) and (id_coef in coef_p):
+            concentracoes.conc_p_org = cb_p_org(tempo_delta, coeficientes, concentracoes)
+            concentracoes.conc_p_inorg = cb_p_inorg(tempo_delta, coeficientes, concentracoes, hidraulica)
+            concentracoes.conc_p_total = concentracoes.conc_p_org + concentracoes.conc_p_inorg
+        if (lista_modelagem['m_c']) and (id_coef in coef_cf):
+            concentracoes.conc_e_coli = cb_e_coli(tempo_delta, coeficientes, concentracoes)
  
     return concentracoes
 
@@ -844,30 +847,6 @@ def modelagem_calib(e_coeficientes, lista_final, lista_s_pontual, lista_e_pontua
         if i == 0:
             concentracoes = copy.deepcopy(lista_e_pontual[0].concentracoes)
                        
-
-        else:
-            tempo_delta = discretizacao / (hidraulica.velocidade * 86400)
-            if lista_modelagem['m_n']:
-                f_nitr = 1 - np.exp(1) ** (- coeficientes.k_nit_od * concentracoes.conc_od)
-            else:
-                f_nitr = 0 * concentracoes.conc_od
-                
-            
-            
-            if lista_modelagem['m_od']:
-                concentracoes.conc_od, od_saturacao, anaerobiose = cb_od(tempo_delta, coeficientes, concentracoes, hidraulica, f_nitr, anaerobiose, lista_modelagem['m_n'])
-                concentracoes.conc_dbo, anaerobiose = cb_dbo(tempo_delta, coeficientes, concentracoes, hidraulica, anaerobiose, od_saturacao)
-            if lista_modelagem['m_n']:
-                concentracoes.conc_no = cb_no(tempo_delta, coeficientes, concentracoes)
-                concentracoes.conc_n_amon = cb_n_amon(tempo_delta, coeficientes, concentracoes, hidraulica, f_nitr)
-                concentracoes.conc_nitrito = cb_nitrito(tempo_delta, coeficientes, concentracoes, f_nitr)
-                concentracoes.conc_nitrato = cb_nitrato(tempo_delta, coeficientes, concentracoes, f_nitr)
-            if lista_modelagem['m_p']:
-                concentracoes.conc_p_org = cb_p_org(tempo_delta, coeficientes, concentracoes)
-                concentracoes.conc_p_inorg = cb_p_inorg(tempo_delta, coeficientes, concentracoes, hidraulica)
-                concentracoes.conc_p_total = concentracoes.conc_p_org + concentracoes.conc_p_inorg
-            if lista_modelagem['m_c']:
-                concentracoes.conc_e_coli = cb_e_coli(tempo_delta, coeficientes, concentracoes)
           
         for k in range(len(lista_e_pontual)):
             ep_concetracoes = lista_e_pontual[k].concentracoes
@@ -916,7 +895,30 @@ def modelagem_calib(e_coeficientes, lista_final, lista_s_pontual, lista_e_pontua
             for p in range(len(lista_s_pontual)):
                     if hidraulica.comprimento == lista_s_pontual[p].comprimento:
                         vazao -= lista_s_pontual[p].vazao
- 
+
+        tempo_delta = discretizacao / (hidraulica.velocidade * 86400)
+        if lista_modelagem['m_n']:
+            f_nitr = 1 - np.exp(1) ** (- coeficientes.k_nit_od * concentracoes.conc_od)
+        else:
+            f_nitr = 0 * concentracoes.conc_od
+            
+        
+        
+        if lista_modelagem['m_od']:
+            concentracoes.conc_od, od_saturacao, anaerobiose = cb_od(tempo_delta, coeficientes, concentracoes, hidraulica, f_nitr, anaerobiose, lista_modelagem['m_n'])
+            concentracoes.conc_dbo, anaerobiose = cb_dbo(tempo_delta, coeficientes, concentracoes, hidraulica, anaerobiose, od_saturacao)
+        if lista_modelagem['m_n']:
+            concentracoes.conc_no = cb_no(tempo_delta, coeficientes, concentracoes)
+            concentracoes.conc_n_amon = cb_n_amon(tempo_delta, coeficientes, concentracoes, hidraulica, f_nitr)
+            concentracoes.conc_nitrito = cb_nitrito(tempo_delta, coeficientes, concentracoes, f_nitr)
+            concentracoes.conc_nitrato = cb_nitrato(tempo_delta, coeficientes, concentracoes, f_nitr)
+        if lista_modelagem['m_p']:
+            concentracoes.conc_p_org = cb_p_org(tempo_delta, coeficientes, concentracoes)
+            concentracoes.conc_p_inorg = cb_p_inorg(tempo_delta, coeficientes, concentracoes, hidraulica)
+            concentracoes.conc_p_total = concentracoes.conc_p_org + concentracoes.conc_p_inorg
+        if lista_modelagem['m_c']:
+            concentracoes.conc_e_coli = cb_e_coli(tempo_delta, coeficientes, concentracoes)
+
         if ordem_dr == None:
             if i == (len(lista_final) - 1):
                 lista_concentracoes.append(copy.deepcopy(concentracoes))
@@ -1025,28 +1027,6 @@ def modelagem_2(lista_final, lista_e_coeficientes, lista_s_pontual, lista_e_pont
         if i == 0:
             concentracoes = copy.deepcopy(lista_e_pontual[0].concentracoes)
 
-        else:
-            tempo_delta = discretizacao / (hidraulica.velocidade * 86400)
-            
-            if lista_modelagem['m_n']:
-                f_nitr = 1 - np.exp(1) ** (- coeficientes.k_nit_od * concentracoes.conc_od)
-            else:
-                f_nitr = 0 * concentracoes.conc_od
-            
-            if lista_modelagem['m_od']:
-                concentracoes.conc_od, od_saturacao, anaerobiose = cb_od(tempo_delta, coeficientes, concentracoes, hidraulica, f_nitr, anaerobiose, lista_modelagem['m_n'])
-                concentracoes.conc_dbo, anaerobiose = cb_dbo(tempo_delta, coeficientes, concentracoes, hidraulica, anaerobiose, od_saturacao)
-            if lista_modelagem['m_n']:
-                concentracoes.conc_no = cb_no(tempo_delta, coeficientes, concentracoes)
-                concentracoes.conc_n_amon = cb_n_amon(tempo_delta, coeficientes, concentracoes, hidraulica, f_nitr)
-                concentracoes.conc_nitrito = cb_nitrito(tempo_delta, coeficientes, concentracoes, f_nitr)
-                concentracoes.conc_nitrato = cb_nitrato(tempo_delta, coeficientes, concentracoes, f_nitr)
-            if lista_modelagem['m_p']:
-                concentracoes.conc_p_org = cb_p_org(tempo_delta, coeficientes, concentracoes)
-                concentracoes.conc_p_inorg = cb_p_inorg(tempo_delta, coeficientes, concentracoes, hidraulica)
-                concentracoes.conc_p_total = concentracoes.conc_p_org + concentracoes.conc_p_inorg
-            if lista_modelagem['m_c']:
-                concentracoes.conc_e_coli = cb_e_coli(tempo_delta, coeficientes, concentracoes)
           
         for k in range(len(lista_e_pontual)):
             ep_concetracoes = lista_e_pontual[k].concentracoes
@@ -1095,6 +1075,29 @@ def modelagem_2(lista_final, lista_e_coeficientes, lista_s_pontual, lista_e_pont
             for p in range(len(lista_s_pontual)):
                     if hidraulica.comprimento == lista_s_pontual[p].comprimento:
                         vazao -= lista_s_pontual[p].vazao
+
+
+        tempo_delta = discretizacao / (hidraulica.velocidade * 86400)
+        
+        if lista_modelagem['m_n']:
+            f_nitr = 1 - np.exp(1) ** (- coeficientes.k_nit_od * concentracoes.conc_od)
+        else:
+            f_nitr = 0 * concentracoes.conc_od
+        
+        if lista_modelagem['m_od']:
+            concentracoes.conc_od, od_saturacao, anaerobiose = cb_od(tempo_delta, coeficientes, concentracoes, hidraulica, f_nitr, anaerobiose, lista_modelagem['m_n'])
+            concentracoes.conc_dbo, anaerobiose = cb_dbo(tempo_delta, coeficientes, concentracoes, hidraulica, anaerobiose, od_saturacao)
+        if lista_modelagem['m_n']:
+            concentracoes.conc_no = cb_no(tempo_delta, coeficientes, concentracoes)
+            concentracoes.conc_n_amon = cb_n_amon(tempo_delta, coeficientes, concentracoes, hidraulica, f_nitr)
+            concentracoes.conc_nitrito = cb_nitrito(tempo_delta, coeficientes, concentracoes, f_nitr)
+            concentracoes.conc_nitrato = cb_nitrato(tempo_delta, coeficientes, concentracoes, f_nitr)
+        if lista_modelagem['m_p']:
+            concentracoes.conc_p_org = cb_p_org(tempo_delta, coeficientes, concentracoes)
+            concentracoes.conc_p_inorg = cb_p_inorg(tempo_delta, coeficientes, concentracoes, hidraulica)
+            concentracoes.conc_p_total = concentracoes.conc_p_org + concentracoes.conc_p_inorg
+        if lista_modelagem['m_c']:
+            concentracoes.conc_e_coli = cb_e_coli(tempo_delta, coeficientes, concentracoes)
  
         lista_final[i].concentracoes = copy.deepcopy(concentracoes)
         lista_final[i].coeficientes = copy.deepcopy(coeficientes)
