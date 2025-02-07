@@ -354,8 +354,9 @@ def nitrito(tempo_delta, coeficientes, concentracoes, f_nitr):
 
 
 def nitrato(tempo_delta, coeficientes, concentracoes, f_nitr):
-    conc = (f_nitr * coeficientes.k_nn * concentracoes.conc_nitrito * (1.047 ** (coeficientes.temperatura - 20)))
-    conc_nitrato = concentracoes.conc_nitrato + (tempo_delta * conc)
+    conc = f_nitr * coeficientes.k_nn * concentracoes.conc_nitrito * (1.047 ** (coeficientes.temperatura - 20)) * tempo_delta 
+    conc_nitrato = concentracoes.conc_nitrato + conc
+
     return conc_nitrato
 
 
@@ -454,6 +455,7 @@ def modelagem(lista_final, lista_e_coeficientes, lista_s_pontual, lista_e_pontua
                     concentracoes.conc_no = mistura(concentracoes.conc_no, ep_concetracoes.conc_no, vazao, lista_e_pontual[k].vazao)
                     concentracoes.conc_n_amon = mistura(concentracoes.conc_n_amon, ep_concetracoes.conc_n_amon, vazao, lista_e_pontual[k].vazao)
                     concentracoes.conc_nitrito = mistura(concentracoes.conc_nitrito, ep_concetracoes.conc_nitrito, vazao, lista_e_pontual[k].vazao)
+                    concentracoes.conc_nitrato = mistura(concentracoes.conc_nitrato, ep_concetracoes.conc_nitrato, vazao, lista_e_pontual[k].vazao)
                 if lista_modelagem['m_p']:
                     concentracoes.conc_p_org = mistura(concentracoes.conc_p_org, ep_concetracoes.conc_p_org, vazao, lista_e_pontual[k].vazao)
                     concentracoes.conc_p_inorg = mistura(concentracoes.conc_p_inorg, ep_concetracoes.conc_p_inorg, vazao, lista_e_pontual[k].vazao)
@@ -478,6 +480,7 @@ def modelagem(lista_final, lista_e_coeficientes, lista_s_pontual, lista_e_pontua
                         concentracoes.conc_no = mistura(concentracoes.conc_no, ed_concetracoes.conc_no, hidraulica.vazao, vazao_difusa)
                         concentracoes.conc_n_amon = mistura(concentracoes.conc_n_amon, ed_concetracoes.conc_n_amon, hidraulica.vazao, vazao_difusa)
                         concentracoes.conc_nitrito = mistura(concentracoes.conc_nitrito, ed_concetracoes.conc_nitrito, hidraulica.vazao, vazao_difusa)
+                        concentracoes.conc_nitrato = mistura(concentracoes.conc_nitrato, ed_concetracoes.conc_nitrato, hidraulica.vazao, vazao_difusa)
                     if lista_modelagem['m_p']:
                         concentracoes.conc_p_org = mistura(concentracoes.conc_p_org, ed_concetracoes.conc_p_org, hidraulica.vazao, vazao_difusa)
                         concentracoes.conc_p_inorg = mistura(concentracoes.conc_p_inorg, ed_concetracoes.conc_p_inorg, hidraulica.vazao, vazao_difusa)
@@ -731,6 +734,7 @@ def modelagem_as(lista_final, e_coeficientes, lista_s_pontual, lista_e_pontual,
                     concentracoes.conc_no = mistura(concentracoes.conc_no, ep_concetracoes.conc_no, vazao, lista_e_pontual[k].vazao)
                     concentracoes.conc_n_amon = mistura(concentracoes.conc_n_amon, ep_concetracoes.conc_n_amon, vazao, lista_e_pontual[k].vazao)
                     concentracoes.conc_nitrito = mistura(concentracoes.conc_nitrito, ep_concetracoes.conc_nitrito, vazao, lista_e_pontual[k].vazao)
+                    concentracoes.conc_nitrato = mistura(concentracoes.conc_nitrato, ep_concetracoes.conc_nitrato, vazao, lista_e_pontual[k].vazao)
                 if (lista_modelagem['m_p']) and (id_coef in coef_p):
                     concentracoes.conc_p_org = mistura(concentracoes.conc_p_org, ep_concetracoes.conc_p_org, vazao, lista_e_pontual[k].vazao)
                     concentracoes.conc_p_inorg = mistura(concentracoes.conc_p_inorg, ep_concetracoes.conc_p_inorg, vazao, lista_e_pontual[k].vazao)
@@ -755,6 +759,7 @@ def modelagem_as(lista_final, e_coeficientes, lista_s_pontual, lista_e_pontual,
                         concentracoes.conc_no = mistura(concentracoes.conc_no, ed_concetracoes.conc_no, hidraulica.vazao, vazao_difusa)
                         concentracoes.conc_n_amon = mistura(concentracoes.conc_n_amon, ed_concetracoes.conc_n_amon, hidraulica.vazao, vazao_difusa)
                         concentracoes.conc_nitrito = mistura(concentracoes.conc_nitrito, ed_concetracoes.conc_nitrito, hidraulica.vazao, vazao_difusa)
+                        concentracoes.conc_nitrato = mistura(concentracoes.conc_nitrato, ed_concetracoes.conc_nitrato, hidraulica.vazao, vazao_difusa)
                     if (lista_modelagem['m_p']) and (id_coef in coef_p):
                         concentracoes.conc_p_org = mistura(concentracoes.conc_p_org, ed_concetracoes.conc_p_org, hidraulica.vazao, vazao_difusa)
                         concentracoes.conc_p_inorg = mistura(concentracoes.conc_p_inorg, ed_concetracoes.conc_p_inorg, hidraulica.vazao, vazao_difusa)
@@ -860,6 +865,7 @@ def modelagem_calib(e_coeficientes, lista_final, lista_s_pontual, lista_e_pontua
                     concentracoes.conc_no = mistura(concentracoes.conc_no, ep_concetracoes.conc_no, vazao, lista_e_pontual[k].vazao)
                     concentracoes.conc_n_amon = mistura(concentracoes.conc_n_amon, ep_concetracoes.conc_n_amon, vazao, lista_e_pontual[k].vazao)
                     concentracoes.conc_nitrito = mistura(concentracoes.conc_nitrito, ep_concetracoes.conc_nitrito, vazao, lista_e_pontual[k].vazao)
+                    concentracoes.conc_nitrato = mistura(concentracoes.conc_nitrato, ep_concetracoes.conc_nitrato, vazao, lista_e_pontual[k].vazao)
                 if lista_modelagem['m_p']:
                     concentracoes.conc_p_org = mistura(concentracoes.conc_p_org, ep_concetracoes.conc_p_org, vazao, lista_e_pontual[k].vazao)
                     concentracoes.conc_p_inorg = mistura(concentracoes.conc_p_inorg, ep_concetracoes.conc_p_inorg, vazao, lista_e_pontual[k].vazao)
@@ -884,6 +890,7 @@ def modelagem_calib(e_coeficientes, lista_final, lista_s_pontual, lista_e_pontua
                         concentracoes.conc_no = mistura(concentracoes.conc_no, ed_concetracoes.conc_no, hidraulica.vazao, vazao_difusa)
                         concentracoes.conc_n_amon = mistura(concentracoes.conc_n_amon, ed_concetracoes.conc_n_amon, hidraulica.vazao, vazao_difusa)
                         concentracoes.conc_nitrito = mistura(concentracoes.conc_nitrito, ed_concetracoes.conc_nitrito, hidraulica.vazao, vazao_difusa)
+                        concentracoes.conc_nitrato = mistura(concentracoes.conc_nitrato, ed_concetracoes.conc_nitrato, hidraulica.vazao, vazao_difusa)
                     if lista_modelagem['m_p']:
                         concentracoes.conc_p_org = mistura(concentracoes.conc_p_org, ed_concetracoes.conc_p_org, hidraulica.vazao, vazao_difusa)
                         concentracoes.conc_p_inorg = mistura(concentracoes.conc_p_inorg, ed_concetracoes.conc_p_inorg, hidraulica.vazao, vazao_difusa)
@@ -1040,6 +1047,7 @@ def modelagem_2(lista_final, lista_e_coeficientes, lista_s_pontual, lista_e_pont
                     concentracoes.conc_no = mistura(concentracoes.conc_no, ep_concetracoes.conc_no, vazao, lista_e_pontual[k].vazao)
                     concentracoes.conc_n_amon = mistura(concentracoes.conc_n_amon, ep_concetracoes.conc_n_amon, vazao, lista_e_pontual[k].vazao)
                     concentracoes.conc_nitrito = mistura(concentracoes.conc_nitrito, ep_concetracoes.conc_nitrito, vazao, lista_e_pontual[k].vazao)
+                    concentracoes.conc_nitrato = mistura(concentracoes.conc_nitrato, ep_concetracoes.conc_nitrato, vazao, lista_e_pontual[k].vazao)
                 if lista_modelagem['m_p']:
                     concentracoes.conc_p_org = mistura(concentracoes.conc_p_org, ep_concetracoes.conc_p_org, vazao, lista_e_pontual[k].vazao)
                     concentracoes.conc_p_inorg = mistura(concentracoes.conc_p_inorg, ep_concetracoes.conc_p_inorg, vazao, lista_e_pontual[k].vazao)
@@ -1064,6 +1072,7 @@ def modelagem_2(lista_final, lista_e_coeficientes, lista_s_pontual, lista_e_pont
                         concentracoes.conc_no = mistura(concentracoes.conc_no, ed_concetracoes.conc_no, hidraulica.vazao, vazao_difusa)
                         concentracoes.conc_n_amon = mistura(concentracoes.conc_n_amon, ed_concetracoes.conc_n_amon, hidraulica.vazao, vazao_difusa)
                         concentracoes.conc_nitrito = mistura(concentracoes.conc_nitrito, ed_concetracoes.conc_nitrito, hidraulica.vazao, vazao_difusa)
+                        concentracoes.conc_nitrato = mistura(concentracoes.conc_nitrato, ed_concetracoes.conc_nitrato, hidraulica.vazao, vazao_difusa)
                     if lista_modelagem['m_p']:
                         concentracoes.conc_p_org = mistura(concentracoes.conc_p_org, ed_concetracoes.conc_p_org, hidraulica.vazao, vazao_difusa)
                         concentracoes.conc_p_inorg = mistura(concentracoes.conc_p_inorg, ed_concetracoes.conc_p_inorg, hidraulica.vazao, vazao_difusa)
