@@ -4,7 +4,7 @@ import plotly.graph_objects as go
 from funcoes.equacoes import lista_hidr, menor_dist, modelagem_as_final, func_hidraulica, menor_dist2, ajust_porc, modelagem_calib_final
 import copy
 import numpy as np
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from funcoes.otimizador import gera_enxame_inicial, dict_obtj, melhores_resultados, pso
 from functools import partial
 from plotly.subplots import make_subplots
@@ -1193,39 +1193,40 @@ def ordem_analise_sensibilidade(list_tranfor, ponto_af, lista_modelagem, ordem_d
                                         i_coef=id_v,
                                         conj_coeficientes=conj_coeficientes)
             
-            with ThreadPoolExecutor() as executor:
-                
-                futuros = {executor.submit(partial_function, valor): idx for idx, valor in enumerate(lista_chaves)}
+            with ProcessPoolExecutor() as executor:
 
-                for futuro in as_completed(futuros):
-                    resultado, chave = futuro.result() 
+                resultados = list(executor.map(partial_function, lista_chaves))
 
-                    if id_v == 0:
-                        if lista_modelagem['m_od'] and (chave in coef_od):
-                            lista_as_od[chave] = [porcent(copy.deepcopy(resultado.conc_od[0]), result_media.conc_od[0])]
-                            lista_as_dbo[chave] = [porcent(copy.deepcopy(resultado.conc_dbo[0]), result_media.conc_dbo[0])]
-                        if (lista_modelagem['m_n']) and (chave in coef_n):
-                            lista_as_no[chave] = [porcent(copy.deepcopy(resultado.conc_no[0]), result_media.conc_no[0])]
-                            lista_as_n_amon[chave] = [porcent(copy.deepcopy(resultado.conc_n_amon[0]), result_media.conc_n_amon[0])]
-                            lista_as_nitrato[chave] = [porcent(copy.deepcopy(resultado.conc_nitrato[0]), result_media.conc_nitrato[0])]
-                            lista_as_nitrito[chave] = [porcent(copy.deepcopy(resultado.conc_nitrito[0]), result_media.conc_nitrito[0])]
-                        if (lista_modelagem['m_p']) and (chave in coef_p):
-                            lista_as_p_total[chave] = [porcent(copy.deepcopy(resultado.conc_p_total[0]), result_media.conc_p_total[0])]
-                        if (lista_modelagem['m_c']) and (chave in coef_cf):
-                            lista_as_e_coli[chave] = [porcent(copy.deepcopy(resultado.conc_e_coli[0]), result_media.conc_e_coli[0])]
-                    else:
-                        if lista_modelagem['m_od'] and (chave in coef_od):
-                            lista_as_od[chave].append(porcent(copy.deepcopy(resultado.conc_od[0]), result_media.conc_od[0]))
-                            lista_as_dbo[chave].append(porcent(copy.deepcopy(resultado.conc_dbo[0]), result_media.conc_dbo[0]))
-                        if (lista_modelagem['m_n']) and (chave in coef_n):
-                            lista_as_no[chave].append(porcent(copy.deepcopy(resultado.conc_no[0]), result_media.conc_no[0]))
-                            lista_as_n_amon[chave].append(porcent(copy.deepcopy(resultado.conc_n_amon[0]), result_media.conc_n_amon[0]))
-                            lista_as_nitrato[chave].append(porcent(copy.deepcopy(resultado.conc_nitrato[0]), result_media.conc_nitrato[0]))
-                            lista_as_nitrito[chave].append(porcent(copy.deepcopy(resultado.conc_nitrito[0]), result_media.conc_nitrito[0]))
-                        if (lista_modelagem['m_p']) and (chave in coef_p):
-                            lista_as_p_total[chave].append(porcent(copy.deepcopy(resultado.conc_p_total[0]), result_media.conc_p_total[0]))
-                        if (lista_modelagem['m_c']) and (chave in coef_cf):
-                            lista_as_e_coli[chave].append(porcent(copy.deepcopy(resultado.conc_e_coli[0]), result_media.conc_e_coli[0]))
+
+            for futuro in resultados:
+                resultado, chave = futuro.result() 
+
+                if id_v == 0:
+                    if lista_modelagem['m_od'] and (chave in coef_od):
+                        lista_as_od[chave] = [porcent(copy.deepcopy(resultado.conc_od[0]), result_media.conc_od[0])]
+                        lista_as_dbo[chave] = [porcent(copy.deepcopy(resultado.conc_dbo[0]), result_media.conc_dbo[0])]
+                    if (lista_modelagem['m_n']) and (chave in coef_n):
+                        lista_as_no[chave] = [porcent(copy.deepcopy(resultado.conc_no[0]), result_media.conc_no[0])]
+                        lista_as_n_amon[chave] = [porcent(copy.deepcopy(resultado.conc_n_amon[0]), result_media.conc_n_amon[0])]
+                        lista_as_nitrato[chave] = [porcent(copy.deepcopy(resultado.conc_nitrato[0]), result_media.conc_nitrato[0])]
+                        lista_as_nitrito[chave] = [porcent(copy.deepcopy(resultado.conc_nitrito[0]), result_media.conc_nitrito[0])]
+                    if (lista_modelagem['m_p']) and (chave in coef_p):
+                        lista_as_p_total[chave] = [porcent(copy.deepcopy(resultado.conc_p_total[0]), result_media.conc_p_total[0])]
+                    if (lista_modelagem['m_c']) and (chave in coef_cf):
+                        lista_as_e_coli[chave] = [porcent(copy.deepcopy(resultado.conc_e_coli[0]), result_media.conc_e_coli[0])]
+                else:
+                    if lista_modelagem['m_od'] and (chave in coef_od):
+                        lista_as_od[chave].append(porcent(copy.deepcopy(resultado.conc_od[0]), result_media.conc_od[0]))
+                        lista_as_dbo[chave].append(porcent(copy.deepcopy(resultado.conc_dbo[0]), result_media.conc_dbo[0]))
+                    if (lista_modelagem['m_n']) and (chave in coef_n):
+                        lista_as_no[chave].append(porcent(copy.deepcopy(resultado.conc_no[0]), result_media.conc_no[0]))
+                        lista_as_n_amon[chave].append(porcent(copy.deepcopy(resultado.conc_n_amon[0]), result_media.conc_n_amon[0]))
+                        lista_as_nitrato[chave].append(porcent(copy.deepcopy(resultado.conc_nitrato[0]), result_media.conc_nitrato[0]))
+                        lista_as_nitrito[chave].append(porcent(copy.deepcopy(resultado.conc_nitrito[0]), result_media.conc_nitrito[0]))
+                    if (lista_modelagem['m_p']) and (chave in coef_p):
+                        lista_as_p_total[chave].append(porcent(copy.deepcopy(resultado.conc_p_total[0]), result_media.conc_p_total[0]))
+                    if (lista_modelagem['m_c']) and (chave in coef_cf):
+                        lista_as_e_coli[chave].append(porcent(copy.deepcopy(resultado.conc_e_coli[0]), result_media.conc_e_coli[0]))
         
         tabs_modelo = st.tabs(labels_modelos)
         if lista_modelagem['m_od']:

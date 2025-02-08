@@ -1,4 +1,4 @@
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from functools import partial
 import numpy as np
 import random
@@ -37,110 +37,110 @@ def calc_aptidao(seq_coef, lista_lista_pos, list_tranfor, fixar_coef,
                             ordem_dr=ordem_dr,
                             trecho_hidr=trecho_hidr)
     
-    with ThreadPoolExecutor() as executor:
+    with ProcessPoolExecutor() as executor:
+
+        resultados = list(executor.map(partial_function, lista_lista_pos))
         
-        futuros = {executor.submit(partial_function, valor): idx for idx, valor in enumerate(lista_lista_pos)}
 
-        for futuro in as_completed(futuros):
-            lista_conc_final = futuro.result() 
-            list_sim_real = {}
-            if lista_modelagem['m_od']:
-                list_sim_real['conc_od'] = {'real':[], 'simulado': []}
-                list_sim_real['conc_dbo'] = {'real':[], 'simulado': []}
-            if lista_modelagem['m_n']:
-                list_sim_real['conc_no'] = {'real':[], 'simulado': []}
-                list_sim_real['conc_n_amon'] = {'real':[], 'simulado': []}
-                list_sim_real['conc_nitrito'] = {'real':[], 'simulado': []}
-            if lista_modelagem['m_p']:
-                list_sim_real['conc_p_org'] = {'real':[], 'simulado': []}
-                list_sim_real['conc_p_inorg'] = {'real':[], 'simulado': []}
-            if lista_modelagem['m_c']:
-                list_sim_real['conc_e_coli'] = {'real':[], 'simulado': []}
+    for futuro in as_completed(resultados):
+        lista_conc_final = futuro.result() 
+        list_sim_real = {}
+        if lista_modelagem['m_od']:
+            list_sim_real['conc_od'] = {'real':[], 'simulado': []}
+            list_sim_real['conc_dbo'] = {'real':[], 'simulado': []}
+        if lista_modelagem['m_n']:
+            list_sim_real['conc_no'] = {'real':[], 'simulado': []}
+            list_sim_real['conc_n_amon'] = {'real':[], 'simulado': []}
+            list_sim_real['conc_nitrito'] = {'real':[], 'simulado': []}
+        if lista_modelagem['m_p']:
+            list_sim_real['conc_p_org'] = {'real':[], 'simulado': []}
+            list_sim_real['conc_p_inorg'] = {'real':[], 'simulado': []}
+        if lista_modelagem['m_c']:
+            list_sim_real['conc_e_coli'] = {'real':[], 'simulado': []}
 
-            nome_modelos = list(list_sim_real.keys())
+        nome_modelos = list(list_sim_real.keys())
 
-            
-            if lista_modelagem['s_t']:
-                for id_dias in range(len(dias)):
-                    for id_dr in range(len(ordem_dr)):
-                        lista_dador = list_tranfor[ordem_rio[-1]].lista_dados_reais[ordem_dr[id_dr]]
-                        for id_dia_dr in range(len(lista_dador.data_dr)):
-
-                            if dias[id_dias].date() == lista_dador.data_dr[id_dia_dr].date():
-                                if lista_modelagem['m_od']:
-                                    list_sim_real['conc_od']['real'].append(copy.deepcopy(lista_dador.concentracoes.conc_od[id_dia_dr]))
-                                    list_sim_real['conc_od']['simulado'].append(copy.deepcopy(lista_conc_final[id_dr].conc_od[id_dias]))
-                                    list_sim_real['conc_dbo']['real'].append(copy.deepcopy(lista_dador.concentracoes.conc_dbo[id_dia_dr]))
-                                    list_sim_real['conc_dbo']['simulado'].append(copy.deepcopy(lista_conc_final[id_dr].conc_dbo[id_dias]))
-                                if lista_modelagem['m_n']:
-                                    list_sim_real['conc_no']['real'].append(copy.deepcopy(lista_dador.concentracoes.conc_no[id_dia_dr]))
-                                    list_sim_real['conc_no']['simulado'].append(copy.deepcopy(lista_conc_final[id_dr].conc_no[id_dias]))
-                                    list_sim_real['conc_n_amon']['real'].append(copy.deepcopy(lista_dador.concentracoes.conc_n_amon[id_dia_dr]))
-                                    list_sim_real['conc_n_amon']['simulado'].append(copy.deepcopy(lista_conc_final[id_dr].conc_n_amon[id_dias]))
-                                    list_sim_real['conc_nitrito']['real'].append(copy.deepcopy(lista_dador.concentracoes.conc_nitrito[id_dia_dr]))
-                                    list_sim_real['conc_nitrito']['simulado'].append(copy.deepcopy(lista_conc_final[id_dr].conc_nitrito[id_dias]))
-                                if lista_modelagem['m_p']:
-                                    list_sim_real['conc_p_org']['real'].append(copy.deepcopy(lista_dador.concentracoes.conc_p_org[id_dia_dr]))
-                                    list_sim_real['conc_p_org']['simulado'].append(copy.deepcopy(lista_conc_final[id_dr].conc_p_org[id_dias]))
-                                    list_sim_real['conc_p_inorg']['real'].append(copy.deepcopy(lista_dador.concentracoes.conc_p_inorg[id_dia_dr]))
-                                    list_sim_real['conc_p_inorg']['simulado'].append(copy.deepcopy(lista_conc_final[id_dr].conc_p_inorg[id_dias]))
-                                if lista_modelagem['m_c']:
-                                    list_sim_real['conc_e_coli']['real'].append(copy.deepcopy(lista_dador.concentracoes.conc_e_coli[id_dia_dr]))
-                                    list_sim_real['conc_e_coli']['simulado'].append(copy.deepcopy(lista_conc_final[id_dr].conc_e_coli[id_dias]))
-            else:
-                
+        
+        if lista_modelagem['s_t']:
+            for id_dias in range(len(dias)):
                 for id_dr in range(len(ordem_dr)):
                     lista_dador = list_tranfor[ordem_rio[-1]].lista_dados_reais[ordem_dr[id_dr]]
-                    if lista_modelagem['m_od']:
-                        list_sim_real['conc_od']['real'].append(copy.deepcopy(lista_dador.concentracoes.conc_od[0]))
-                        list_sim_real['conc_od']['simulado'].append(copy.deepcopy(lista_conc_final[id_dr].conc_od[0]))
-                        list_sim_real['conc_dbo']['real'].append(copy.deepcopy(lista_dador.concentracoes.conc_dbo[0]))
-                        list_sim_real['conc_dbo']['simulado'].append(copy.deepcopy(lista_conc_final[id_dr].conc_dbo[0]))
-                    if lista_modelagem['m_n']:
-                        list_sim_real['conc_no']['real'].append(copy.deepcopy(lista_dador.concentracoes.conc_no[0]))
-                        list_sim_real['conc_no']['simulado'].append(copy.deepcopy(lista_conc_final[id_dr].conc_no[0]))
-                        list_sim_real['conc_n_amon']['real'].append(copy.deepcopy(lista_dador.concentracoes.conc_n_amon[0]))
-                        list_sim_real['conc_n_amon']['simulado'].append(copy.deepcopy(lista_conc_final[id_dr].conc_n_amon[0]))
-                        list_sim_real['conc_nitrito']['real'].append(copy.deepcopy(lista_dador.concentracoes.conc_nitrito[0]))
-                        list_sim_real['conc_nitrito']['simulado'].append(copy.deepcopy(lista_conc_final[id_dr].conc_nitrito[0]))
-                    if lista_modelagem['m_p']:
-                        list_sim_real['conc_p_org']['real'].append(copy.deepcopy(lista_dador.concentracoes.conc_p_org[0]))
-                        list_sim_real['conc_p_org']['simulado'].append(copy.deepcopy(lista_conc_final[id_dr].conc_p_org[0]))
-                        list_sim_real['conc_p_inorg']['real'].append(copy.deepcopy(lista_dador.concentracoes.conc_p_inorg[0]))
-                        list_sim_real['conc_p_inorg']['simulado'].append(copy.deepcopy(lista_conc_final[id_dr].conc_p_inorg[0]))
-                    if lista_modelagem['m_c']:
-                        list_sim_real['conc_e_coli']['real'].append(copy.deepcopy(lista_dador.concentracoes.conc_e_coli[0]))
-                        list_sim_real['conc_e_coli']['simulado'].append(copy.deepcopy(lista_conc_final[id_dr].conc_e_coli[0]))
+                    for id_dia_dr in range(len(lista_dador.data_dr)):
 
-
-            lista_coef_Nash_Sutcliffe = []
-            for model in nome_modelos:
-                soma_1 = 0
-                soma_2 = 0
-                if len(list_sim_real[model]['simulado']) > 0:
-                    for id in range(len(list_sim_real[model]['simulado'])):
-                        soma_1 += (list_sim_real[model]['real'][id] - list_sim_real[model]['simulado'][id])**2
-                        soma_2 += (list_sim_real[model]['real'][id] - np.mean(list_sim_real[model]['real']))**2
-
-                    if len(list_sim_real[model]['simulado']) == 1 or soma_2 == 0:
-                        f_1 = 1 - (soma_1 / 0.0001)
-                    else:
-                        f_1 = 1 - (soma_1 / soma_2)
-                    
-                    lista_coef_Nash_Sutcliffe.append(abs(1 - f_1))
-                else:
-                    lista_coef_Nash_Sutcliffe = [9999]
-
-            lista_coef_Nash_Sutcliffe = np.array(lista_coef_Nash_Sutcliffe)
-            st.write(lista_coef_Nash_Sutcliffe)
-            st.write(np.sqrt(np.mean(lista_coef_Nash_Sutcliffe**2)))
+                        if dias[id_dias].date() == lista_dador.data_dr[id_dia_dr].date():
+                            if lista_modelagem['m_od']:
+                                list_sim_real['conc_od']['real'].append(copy.deepcopy(lista_dador.concentracoes.conc_od[id_dia_dr]))
+                                list_sim_real['conc_od']['simulado'].append(copy.deepcopy(lista_conc_final[id_dr].conc_od[id_dias]))
+                                list_sim_real['conc_dbo']['real'].append(copy.deepcopy(lista_dador.concentracoes.conc_dbo[id_dia_dr]))
+                                list_sim_real['conc_dbo']['simulado'].append(copy.deepcopy(lista_conc_final[id_dr].conc_dbo[id_dias]))
+                            if lista_modelagem['m_n']:
+                                list_sim_real['conc_no']['real'].append(copy.deepcopy(lista_dador.concentracoes.conc_no[id_dia_dr]))
+                                list_sim_real['conc_no']['simulado'].append(copy.deepcopy(lista_conc_final[id_dr].conc_no[id_dias]))
+                                list_sim_real['conc_n_amon']['real'].append(copy.deepcopy(lista_dador.concentracoes.conc_n_amon[id_dia_dr]))
+                                list_sim_real['conc_n_amon']['simulado'].append(copy.deepcopy(lista_conc_final[id_dr].conc_n_amon[id_dias]))
+                                list_sim_real['conc_nitrito']['real'].append(copy.deepcopy(lista_dador.concentracoes.conc_nitrito[id_dia_dr]))
+                                list_sim_real['conc_nitrito']['simulado'].append(copy.deepcopy(lista_conc_final[id_dr].conc_nitrito[id_dias]))
+                            if lista_modelagem['m_p']:
+                                list_sim_real['conc_p_org']['real'].append(copy.deepcopy(lista_dador.concentracoes.conc_p_org[id_dia_dr]))
+                                list_sim_real['conc_p_org']['simulado'].append(copy.deepcopy(lista_conc_final[id_dr].conc_p_org[id_dias]))
+                                list_sim_real['conc_p_inorg']['real'].append(copy.deepcopy(lista_dador.concentracoes.conc_p_inorg[id_dia_dr]))
+                                list_sim_real['conc_p_inorg']['simulado'].append(copy.deepcopy(lista_conc_final[id_dr].conc_p_inorg[id_dias]))
+                            if lista_modelagem['m_c']:
+                                list_sim_real['conc_e_coli']['real'].append(copy.deepcopy(lista_dador.concentracoes.conc_e_coli[id_dia_dr]))
+                                list_sim_real['conc_e_coli']['simulado'].append(copy.deepcopy(lista_conc_final[id_dr].conc_e_coli[id_dias]))
+        else:
             
-            st.write(round(np.sqrt(np.mean(lista_coef_Nash_Sutcliffe**2)), precisao))
+            for id_dr in range(len(ordem_dr)):
+                lista_dador = list_tranfor[ordem_rio[-1]].lista_dados_reais[ordem_dr[id_dr]]
+                if lista_modelagem['m_od']:
+                    list_sim_real['conc_od']['real'].append(copy.deepcopy(lista_dador.concentracoes.conc_od[0]))
+                    list_sim_real['conc_od']['simulado'].append(copy.deepcopy(lista_conc_final[id_dr].conc_od[0]))
+                    list_sim_real['conc_dbo']['real'].append(copy.deepcopy(lista_dador.concentracoes.conc_dbo[0]))
+                    list_sim_real['conc_dbo']['simulado'].append(copy.deepcopy(lista_conc_final[id_dr].conc_dbo[0]))
+                if lista_modelagem['m_n']:
+                    list_sim_real['conc_no']['real'].append(copy.deepcopy(lista_dador.concentracoes.conc_no[0]))
+                    list_sim_real['conc_no']['simulado'].append(copy.deepcopy(lista_conc_final[id_dr].conc_no[0]))
+                    list_sim_real['conc_n_amon']['real'].append(copy.deepcopy(lista_dador.concentracoes.conc_n_amon[0]))
+                    list_sim_real['conc_n_amon']['simulado'].append(copy.deepcopy(lista_conc_final[id_dr].conc_n_amon[0]))
+                    list_sim_real['conc_nitrito']['real'].append(copy.deepcopy(lista_dador.concentracoes.conc_nitrito[0]))
+                    list_sim_real['conc_nitrito']['simulado'].append(copy.deepcopy(lista_conc_final[id_dr].conc_nitrito[0]))
+                if lista_modelagem['m_p']:
+                    list_sim_real['conc_p_org']['real'].append(copy.deepcopy(lista_dador.concentracoes.conc_p_org[0]))
+                    list_sim_real['conc_p_org']['simulado'].append(copy.deepcopy(lista_conc_final[id_dr].conc_p_org[0]))
+                    list_sim_real['conc_p_inorg']['real'].append(copy.deepcopy(lista_dador.concentracoes.conc_p_inorg[0]))
+                    list_sim_real['conc_p_inorg']['simulado'].append(copy.deepcopy(lista_conc_final[id_dr].conc_p_inorg[0]))
+                if lista_modelagem['m_c']:
+                    list_sim_real['conc_e_coli']['real'].append(copy.deepcopy(lista_dador.concentracoes.conc_e_coli[0]))
+                    list_sim_real['conc_e_coli']['simulado'].append(copy.deepcopy(lista_conc_final[id_dr].conc_e_coli[0]))
 
 
-            # lista_aptidoes.append(round((np.mean(lista_coef_Nash_Sutcliffe)), precisao))
-            lista_aptidoes.append(round(np.sqrt(np.mean(lista_coef_Nash_Sutcliffe**2)), precisao))
-        st.write(lista_aptidoes)
+        lista_coef_Nash_Sutcliffe = []
+        for model in nome_modelos:
+            soma_1 = 0
+            soma_2 = 0
+            if len(list_sim_real[model]['simulado']) > 0:
+                for id in range(len(list_sim_real[model]['simulado'])):
+                    soma_1 += (list_sim_real[model]['real'][id] - list_sim_real[model]['simulado'][id])**2
+                    soma_2 += (list_sim_real[model]['real'][id] - np.mean(list_sim_real[model]['real']))**2
+
+                if len(list_sim_real[model]['simulado']) == 1 or soma_2 == 0:
+                    f_1 = 1 - (soma_1 / 0.0001)
+                else:
+                    f_1 = 1 - (soma_1 / soma_2)
+                
+                lista_coef_Nash_Sutcliffe.append(abs(1 - f_1))
+            else:
+                lista_coef_Nash_Sutcliffe = [9999]
+
+        lista_coef_Nash_Sutcliffe = np.array(lista_coef_Nash_Sutcliffe)
+        st.write(lista_coef_Nash_Sutcliffe)
+        st.write(np.sqrt(np.mean(lista_coef_Nash_Sutcliffe**2)))
+        
+        st.write(round(np.sqrt(np.mean(lista_coef_Nash_Sutcliffe**2)), precisao))
+
+
+        # lista_aptidoes.append(round((np.mean(lista_coef_Nash_Sutcliffe)), precisao))
+        lista_aptidoes.append(round(np.sqrt(np.mean(lista_coef_Nash_Sutcliffe**2)), precisao))
 
     st.write(lista_aptidoes)
     return lista_aptidoes
