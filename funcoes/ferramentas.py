@@ -1441,16 +1441,16 @@ def estrutura_calibracao(list_tranfor, fixar_coef, seq_coef, list_ordem_coef, li
     cont = 0
     g = 0
     ap_ant = 0
-    # tam_enxame = lista_par_pos[0]
-    # n_ger = lista_par_pos[1]
-    # w = lista_par_pos[2]  # Inércia
-    # c1 = lista_par_pos[3]  # Componente cognitiva (pessoal)
-    # c2 = lista_par_pos[4]  # Componente social (global)
-    w = 0.7
-    c1 = 2
-    c2 = 1.5
-    tam_enxame = 50
-    n_ger = 100
+    tam_enxame = lista_par_pos[0]
+    n_ger = lista_par_pos[1]
+    w = lista_par_pos[2]  # Inércia
+    c1 = lista_par_pos[3]  # Componente cognitiva (pessoal)
+    c2 = lista_par_pos[4]  # Componente social (global)
+    # w = 0.7
+    # c1 = 2
+    # c2 = 1.5
+    # tam_enxame = 50
+    # n_ger = 100
 
     random.seed()
 
