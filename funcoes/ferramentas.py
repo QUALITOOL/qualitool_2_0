@@ -1597,7 +1597,6 @@ def estrutura_calibracao(list_tranfor, fixar_coef, seq_coef, list_ordem_coef, li
 
     tabs_modelo = st.tabs(labels_modelos)
     
-    lista_coef_Nash_Sutcliffe = []
     for idn in range(len(nome_modelos)):
         model = nome_modelos[idn]
         coln_1, conl_2 = tabs_modelo[idn].columns(2)
@@ -1613,10 +1612,8 @@ def estrutura_calibracao(list_tranfor, fixar_coef, seq_coef, list_ordem_coef, li
             else:
                 f_1 = 1 - (soma_1 / soma_2)
             
-            lista_coef_Nash_Sutcliffe.append(abs(1 - f_1))
             coln_1.markdown('Coeficiente de Nash-Sutcliffe: ' + str(np.round(f_1, precisao)))
         else:
-            lista_coef_Nash_Sutcliffe = [9999]
             coln_1.markdown('ERRO - 9999')
 
         if lista_modelagem['s_t']:
