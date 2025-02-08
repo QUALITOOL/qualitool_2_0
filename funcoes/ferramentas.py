@@ -1199,7 +1199,7 @@ def ordem_analise_sensibilidade(list_tranfor, ponto_af, lista_modelagem, ordem_d
                 resultados = list(executor.map(partial_function, lista_chaves))
 
             for futuro in resultados:
-                resultado, chave = futuro.result() 
+                resultado, chave = futuro
 
                 if id_v == 0:
                     if lista_modelagem['m_od'] and (chave in coef_od):

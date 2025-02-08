@@ -43,7 +43,6 @@ def calc_aptidao(seq_coef, lista_lista_pos, list_tranfor, fixar_coef,
         resultados = list(executor.map(partial_function, lista_lista_pos))
 
     for futuro in resultados:
-        lista_conc_final = futuro.result() 
         list_sim_real = {}
         if lista_modelagem['m_od']:
             list_sim_real['conc_od'] = {'real':[], 'simulado': []}
