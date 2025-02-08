@@ -268,13 +268,12 @@ def dados_reais(n_tributarios, labels, lista_tabs, list_name, list_valores,
                 list_valores_dr = [[0.0]] + list_valores
                 df_dr2 = pd.DataFrame(columns=list_name_dr)
               
-                
                 for yc in range(len(list_name_dr)):
                     if lista_modelagem['s_t'] == True:
                         if yc == 0:
                             df_dr2[list_name_dr[yc]] = [None]
                         else:
-                            df_dr2[list_name_dr[yc]] = list_valores_dr[yc - 1]
+                            df_dr2[list_name_dr[yc]] = list_valores_dr[yc - 1][0]
                     else:
                         df_dr2[list_name_dr[yc]] = list_valores_dr[yc]
 

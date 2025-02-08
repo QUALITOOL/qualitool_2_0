@@ -58,7 +58,7 @@ lista_final, list_entr = modelagem_Final_2(transf_final, reslt_calb['ponto_af'],
                                             reslt_calb['ordem_desague'], ordem_modelagem, reslt_calb['lista_hidraulica_ord'])
             
 
-    
+
 lidt_df = []
 for r in range(n_tributarios + 1):
     rio = lista_final[ordem_modelagem.index(r)]

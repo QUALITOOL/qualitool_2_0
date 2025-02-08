@@ -3,7 +3,7 @@ from funcoes.layout_modelagem import dados_iniciais, fun_contrib_retirad
 from funcoes.layout_calibragem import inicio_calib, dados_reais, coef_intervalo
 from funcoes.ferramentas import transformacao_calib, ordem_desague_geral, lista_hidraulica
 import copy
-
+import pandas as pd
 
 
 st.markdown('#### Modelagem com os'
@@ -47,6 +47,7 @@ if botao:
 
     lista_hidraulica_ord = lista_hidraulica(list_tranfor_Geral, ordem_modelagem, ordem_desague, ponto_af)
 
+    dias = pd.to_datetime(dias)
 
     st.session_state['reslt_calb'] =  {'list_tranfor_Geral': list_tranfor_Geral, 'ordem_final': ordem_final,
                                        'n_trib': n_trib, 'ponto_af': ponto_af, 'lista_modelagem': lista_modelagem,

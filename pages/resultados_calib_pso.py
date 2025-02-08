@@ -1,4 +1,5 @@
 import streamlit as st
+import pandas as pd
 import copy
 from funcoes.ferramentas import estrutura_calibracao, ajuste_trecho, tabelar
 from funcoes.equacoes import salvando_conc
@@ -88,19 +89,22 @@ if var_bol == False:
     if botao_tabelar:
         
         st.session_state['anotacoes'] = {'marcador_global': marcador_conj_global, 'marcador_global_interno': marcador_conj_interno,
-                                         'trecho': trecho_hidr, 'fixar': fixar, 'VarBolean': True, 'transf_final': transf_final}
+                                         'trecho': trecho_hidr, 'fixar': fixar, 'VarBolean': True, 'transf_final': transf_final,
+                                           'lista_coef_gerados': lista_coef_gerados, 'lista_apt_gerados': lista_apt_gerados}
         st.switch_page("pages/resultados_calib_pso.py")
 else:
     voltar = esquerda.button("Voltar para busca", use_container_width=True)
 
     if voltar:
         st.session_state['anotacoes'] = {'marcador_global': marcador_conj_global, 'marcador_global_interno': marcador_conj_interno,
-                                         'trecho': trecho_hidr, 'fixar': fixar, 'VarBolean': False, 'transf_final': transf_final}
+                                         'trecho': trecho_hidr, 'fixar': fixar, 'VarBolean': False, 'transf_final': transf_final,
+                                           'lista_coef_gerados': lista_coef_gerados, 'lista_apt_gerados': lista_apt_gerados}
         st.switch_page("pages/resultados_calib_pso.py")
 botao_proximo = direita.button('Próximo trecho', type='primary', use_container_width=True)
 
 if botao_proximo:
 # Salvando os valores do coeficiente calibrado ou tabelado
+    mudou = False
     if len(lista_coef_gerados) > 0:
         coef_ponto = copy.deepcopy(lista_coef_gerados[lista_apt_gerados.index(min(lista_apt_gerados))])
 
@@ -126,17 +130,27 @@ if botao_proximo:
         else:
             marcador_conj_interno = 0
             marcador_conj_global += 1
+            mudou = True
 
     else:
         marcador_conj_interno += 1
+        mudou = True
     
 
     trecho_hidr = ajuste_trecho(list_tranfor, reslt_calb['lista_hidraulica_ord'], reslt_calb['list_ordem_coef'],
                                 marcador_conj_global, marcador_conj_interno,
                                 reslt_calb['ordem_final'], ordem_modelagem)
+    
+    if mudou:
 
-    st.session_state['anotacoes'] = {'marcador_global': marcador_conj_global, 'marcador_global_interno': marcador_conj_interno,
-                                        'trecho': trecho_hidr, 'fixar': fixar, 'VarBolean': False, 'transf_final': transf_final}
+        st.session_state['anotacoes'] = {'marcador_global': marcador_conj_global, 'marcador_global_interno': marcador_conj_interno,
+                                            'trecho': trecho_hidr, 'fixar': fixar, 'VarBolean': False, 'transf_final': transf_final,
+                                            'lista_coef_gerados': [], 'lista_apt_gerados': []}
+    else:
+
+        st.session_state['anotacoes'] = {'marcador_global': marcador_conj_global, 'marcador_global_interno': marcador_conj_interno,
+                                            'trecho': trecho_hidr, 'fixar': fixar, 'VarBolean': False, 'transf_final': transf_final,
+                                            'lista_coef_gerados': lista_coef_gerados, 'lista_apt_gerados': lista_apt_gerados}
 
     st.session_state['reslt_calb'] =  {'list_tranfor_Geral': list_tranfor, 'ordem_final': ordem_final,
                                 'n_trib': n_trib, 'ponto_af': ponto_af, 'lista_modelagem': lista_modelagem,
