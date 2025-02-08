@@ -4,6 +4,7 @@ import numpy as np
 import random
 import copy
 from funcoes.equacoes import modelagem_calib_final
+import streamlit as st
 
 # Particula
 class Particula:
@@ -131,11 +132,17 @@ def calc_aptidao(seq_coef, lista_lista_pos, list_tranfor, fixar_coef,
                     lista_coef_Nash_Sutcliffe = [9999]
 
             lista_coef_Nash_Sutcliffe = np.array(lista_coef_Nash_Sutcliffe)
+            st.write(lista_coef_Nash_Sutcliffe)
+            st.write(np.sqrt(np.mean(lista_coef_Nash_Sutcliffe**2)))
+            
+            st.write(round(np.sqrt(np.mean(lista_coef_Nash_Sutcliffe**2)), precisao))
+
 
             # lista_aptidoes.append(round((np.mean(lista_coef_Nash_Sutcliffe)), precisao))
             lista_aptidoes.append(round(np.sqrt(np.mean(lista_coef_Nash_Sutcliffe**2)), precisao))
+        st.write(lista_aptidoes)
 
-
+    st.write(lista_aptidoes)
     return lista_aptidoes
 
 # Aptidão
