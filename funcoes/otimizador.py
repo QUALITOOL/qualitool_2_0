@@ -123,14 +123,14 @@ def calc_aptidao(seq_coef, lista_lista_pos, list_tranfor, fixar_coef,
                         soma_2 += (list_sim_real[model]['real'][id] - np.mean(list_sim_real[model]['real']))**2
 
                     if len(list_sim_real[model]['simulado']) == 1 or soma_2 == 0:
-                        f_1 = 1 - (soma_1 / 0.0001)
+                        f_1 = (soma_1 / 0.0001)
                     else:
-                        f_1 = 1 - (soma_1 / soma_2)
+                        f_1 = (soma_1 / soma_2)
                     
                     if f_1 < 0:
                         f_1 -= 100
 
-                    lista_coef_Nash_Sutcliffe.append(abs(1 - f_1))
+                    lista_coef_Nash_Sutcliffe.append(abs(f_1))
                 else:
                     lista_coef_Nash_Sutcliffe = [9999]
 
