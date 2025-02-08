@@ -127,10 +127,10 @@ def calc_aptidao(seq_coef, lista_lista_pos, list_tranfor, fixar_coef,
                     else:
                         f_1 = 1 - (soma_1 / soma_2)
                     
-                    valor_ap = abs(1 - f_1)
-                    if valor_ap < 0:
-                        valor_ap += 10
-                    lista_coef_Nash_Sutcliffe.append(valor_ap)
+                    if f_1 < 0:
+                        f_1 -= 100
+
+                    lista_coef_Nash_Sutcliffe.append(abs(1 - f_1))
                 else:
                     lista_coef_Nash_Sutcliffe = [9999]
 
