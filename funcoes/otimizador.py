@@ -4,7 +4,7 @@ import numpy as np
 import random
 import copy
 from funcoes.equacoes import modelagem_calib_final
-import streamlit as st
+from scipy.stats import hmean
 
 # Particula
 class Particula:
@@ -132,7 +132,7 @@ def calc_aptidao(seq_coef, lista_lista_pos, list_tranfor, fixar_coef,
                     lista_coef_Nash_Sutcliffe = [9999]
 
             # lista_aptidoes.append(round((np.mean(lista_coef_Nash_Sutcliffe)), precisao))
-            lista_aptidoes.append(round(np.mean(lista_coef_Nash_Sutcliffe), precisao))
+            lista_aptidoes.append(round(hmean(lista_coef_Nash_Sutcliffe), precisao))
 
 
     return lista_aptidoes
