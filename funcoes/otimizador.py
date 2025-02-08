@@ -1,4 +1,4 @@
-from concurrent.futures import ProcessPoolExecutor, as_completed
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from functools import partial
 import numpy as np
 import random
@@ -37,12 +37,12 @@ def calc_aptidao(seq_coef, lista_lista_pos, list_tranfor, fixar_coef,
                             ordem_dr=ordem_dr,
                             trecho_hidr=trecho_hidr)
     
-    with ProcessPoolExecutor() as executor:
-
-        resultados = list(executor.map(partial_function, lista_lista_pos))
+    with ThreadPoolExecutor() as executor:
         
+        # futuros = {executor.submit(partial_function, valor): idx for idx, valor in enumerate(lista_lista_pos)}
+        resultados = list(executor.map(partial_function, lista_lista_pos))
 
-    for futuro in as_completed(resultados):
+    for futuro in resultados:
         lista_conc_final = futuro.result() 
         list_sim_real = {}
         if lista_modelagem['m_od']:
@@ -133,16 +133,10 @@ def calc_aptidao(seq_coef, lista_lista_pos, list_tranfor, fixar_coef,
                 lista_coef_Nash_Sutcliffe = [9999]
 
         lista_coef_Nash_Sutcliffe = np.array(lista_coef_Nash_Sutcliffe)
-        st.write(lista_coef_Nash_Sutcliffe)
-        st.write(np.sqrt(np.mean(lista_coef_Nash_Sutcliffe**2)))
-        
-        st.write(round(np.sqrt(np.mean(lista_coef_Nash_Sutcliffe**2)), precisao))
-
 
         # lista_aptidoes.append(round((np.mean(lista_coef_Nash_Sutcliffe)), precisao))
         lista_aptidoes.append(round(np.sqrt(np.mean(lista_coef_Nash_Sutcliffe**2)), precisao))
 
-    st.write(lista_aptidoes)
     return lista_aptidoes
 
 # Aptidão

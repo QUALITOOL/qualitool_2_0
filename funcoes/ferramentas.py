@@ -4,7 +4,7 @@ import plotly.graph_objects as go
 from funcoes.equacoes import lista_hidr, menor_dist, modelagem_as_final, func_hidraulica, menor_dist2, ajust_porc, modelagem_calib_final
 import copy
 import numpy as np
-from concurrent.futures import ProcessPoolExecutor, as_completed
+from concurrent.futures import ThreadPoolExecutor
 from funcoes.otimizador import gera_enxame_inicial, dict_obtj, melhores_resultados, pso
 from functools import partial
 from plotly.subplots import make_subplots
@@ -1193,10 +1193,10 @@ def ordem_analise_sensibilidade(list_tranfor, ponto_af, lista_modelagem, ordem_d
                                         i_coef=id_v,
                                         conj_coeficientes=conj_coeficientes)
             
-            with ProcessPoolExecutor() as executor:
-
+            with ThreadPoolExecutor() as executor:
+                
+                # futuros = {executor.submit(partial_function, valor): idx for idx, valor in enumerate(lista_chaves)}
                 resultados = list(executor.map(partial_function, lista_chaves))
-
 
             for futuro in resultados:
                 resultado, chave = futuro.result() 
