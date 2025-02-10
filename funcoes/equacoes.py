@@ -1,7 +1,6 @@
 import numpy as np
 import scipy.optimize as opt
 import copy
-import streamlit as st
 
 ##########################################################################################################
 # OBJETOS

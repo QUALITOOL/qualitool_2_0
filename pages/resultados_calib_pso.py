@@ -1,5 +1,4 @@
 import streamlit as st
-import pandas as pd
 import copy
 from funcoes.ferramentas import estrutura_calibracao, ajuste_trecho, tabelar
 from funcoes.equacoes import salvando_conc

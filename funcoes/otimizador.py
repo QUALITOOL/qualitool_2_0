@@ -1,10 +1,10 @@
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import ThreadPoolExecutor
 from functools import partial
 import numpy as np
 import random
 import copy
 from funcoes.equacoes import modelagem_calib_final
-import streamlit as st
+
 
 # Particula
 class Particula:
