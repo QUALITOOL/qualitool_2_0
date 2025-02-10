@@ -64,7 +64,7 @@ def inicio_calib(paramentro):
         col1, col2 = st.columns(2)
         col2_1, col2_2 = col2.columns(2)
         tam_enxame = col2_1.number_input("❗ Tamanho do enxame:", value=15, min_value=1)
-        n_ger = col2_2.number_input("❗ Número de iterações", value=30, min_value=1)
+        n_ger = col2_2.number_input("❗ Número de iterações", value=15, min_value=1)
         col2.warning('''Cuidado: Quanto maior for o tamanho do enxame ou o número de iterações, 
                         maior será o tempo necessário para gerar os resultados.''',
                     icon="❗")
