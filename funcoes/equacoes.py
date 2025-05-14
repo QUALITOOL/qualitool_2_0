@@ -240,22 +240,24 @@ def func_hidraulica(lista_hidraulica, lista_s_pontual, lista_e_pontual, lista_e_
 
 
 def k2(hidraulica):
-    
-    if 0.1 <= hidraulica.profundidade < 4 and 0.05 <= hidraulica.velocidade < 1.6:
-        if 0.6 <= hidraulica.profundidade < 4 and 0.05 <= hidraulica.velocidade < 0.8:
-            k_2 = 3.73 * (hidraulica.velocidade ** 0.5) * (hidraulica.profundidade ** -1.5)
-        elif 0.6 <= hidraulica.profundidade < 4 and 0.8 <= hidraulica.velocidade < 1.6:
-            k_2 = 5 * (hidraulica.velocidade ** 0.97) * (hidraulica.profundidade ** -1.67)
+    lista_k2 = []
+    for i_k2 in range(len(hidraulica.profundidade)):
+        if 0.1 <= hidraulica.profundidade[i_k2] < 4 and 0.05 <= hidraulica.velocidade[i_k2] < 1.6:
+            if 0.6 <= hidraulica.profundidade[i_k2] < 4 and 0.05 <= hidraulica.velocidade[i_k2] < 0.8:
+                k_2 = 3.73 * (hidraulica.velocidade[i_k2] ** 0.5) * (hidraulica.profundidade[i_k2] ** -1.5)
+            elif 0.6 <= hidraulica.profundidade[i_k2] < 4 and 0.8 <= hidraulica.velocidade[i_k2] < 1.6:
+                k_2 = 5 * (hidraulica.velocidade[i_k2] ** 0.97) * (hidraulica.profundidade[i_k2] ** -1.67)
+            else:
+                k_2 = 5.3 * (hidraulica.velocidade[i_k2] ** 0.67) * (hidraulica.profundidade[i_k2] ** -1.85)
+        elif 0.03 <= hidraulica.vazao[i_k2] <= 8.5:
+            if 0.03 <= hidraulica.vazao[i_k2] < 0.3:
+                k_2 = 31.6 * hidraulica.velocidade[i_k2] * hidraulica.inclinacao * 1000
+            else:
+                k_2 = 15.4 * hidraulica.velocidade[i_k2] * hidraulica.inclinacao * 1000
         else:
-            k_2 = 5.3 * (hidraulica.velocidade ** 0.67) * (hidraulica.profundidade ** -1.85)
-    elif 0.03 <= hidraulica.vazao <= 8.5:
-        if 0.03 <= hidraulica.vazao < 0.3:
-            k_2 = 31.6 * hidraulica.velocidade * hidraulica.inclinacao * 1000
-        else:
-            k_2 = 15.4 * hidraulica.velocidade * hidraulica.inclinacao * 1000
-    else:
-        k_2 = 20.74 * (hidraulica.vazao ** -0.42)
-    return k_2
+            k_2 = 20.74 * (hidraulica.vazao[i_k2] ** -0.42)
+        lista_k2.append(k_2)
+    return lista_k2
 
 
 def mistura(parametro, e_paramentro, vazao, e_vazao):
