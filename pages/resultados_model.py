@@ -43,8 +43,10 @@ if n_tributarios > 0:
 else:
     ordem_modelagem = [0]
 
-lista_final, list_entr = modelagem_Final(list_tranfor, ponto_af, lista_modelagem,
-                                            ordem_desague, ordem_modelagem)
+lista_final, list_entr = modelagem_Final(list_tranfor, ponto_af,
+                                         lista_modelagem,
+                                         ordem_desague,
+                                         ordem_modelagem)
 
 
 lidt_df = []
@@ -52,9 +54,11 @@ for r in range(n_tributarios + 1):
     rio = lista_final[ordem_modelagem.index(r)]
 
     df = None
-    obj_to_dict = {'rio': [],'latitude': [], 'longitude': [], 'altitude': [], 'comprimento': [], 'vazao': [],
-                    'profundidade': [], 'velocidade': [], 'tensao_c': [], 'nivel_dagua': [],
-                    'froude': []}
+    obj_to_dict = {'rio': [],'latitude': [], 'longitude': [],
+                   'altitude': [], 'comprimento': [], 'vazao': [],
+                   'profundidade': [], 'velocidade': [],
+                   'tensao_c': [], 'nivel_dagua': [],
+                   'froude': []}
     if lista_modelagem['s_t']:
         dt = {'data': []}
         dt.update(obj_to_dict)
@@ -113,6 +117,7 @@ for r in range(n_tributarios + 1):
     lidt_df.append(df)
 
 
-plotar(n_tributarios, lista_modelagem, lidt_df, list_entr, labels, zona, hemisferio, dias)
+plotar(n_tributarios, lista_modelagem, lidt_df, list_entr, labels,
+       zona, hemisferio, dias)
 
 st.session_state['reslt_model'] = []

@@ -13,8 +13,12 @@ st.markdown('''<div style='text-align: justify;
             unsafe_allow_html=True)
 
 st.write(' ')
-st.page_link("https://github.com/QUALITOOL/qualitool_2_0", label="Repositório no GITHUB", icon=":material/code:")
-st.page_link("https://labsanufu.wixsite.com/site", label="Visite o site do LABSAN", icon=":material/find_in_page:")
+st.page_link("https://github.com/QUALITOOL/qualitool_2_0",
+             label="Repositório no GITHUB",
+             icon=":material/code:")
+st.page_link("https://labsanufu.wixsite.com/site",
+             label="Visite o site do LABSAN",
+             icon=":material/find_in_page:")
 
 st.divider()
 st.markdown('''<h5 style='text-align: center;

@@ -1,6 +1,7 @@
 import streamlit as st
-from funcoes.layout_modelagem import inicio, dados_iniciais, coeficientes
-from funcoes.layout_modelagem import fun_contrib_retirad, salvararquivo
+from funcoes.layout_modelagem import inicio, dados_iniciais
+from funcoes.layout_modelagem import fun_contrib_retirad
+from funcoes.layout_modelagem import coeficientes, salvararquivo
 from funcoes.ferramentas import transformacao
 import copy
 
@@ -8,8 +9,8 @@ import copy
 st.markdown('#### Modelagem com os'
             + ' :orange[coeficientes predefinidos]:')
 
-paramentro = {'m_od': True, 'm_dbo': True, 'm_n': True, 'm_p': True,
-                'm_c': True, 'n_tb': 0, 's_t': True}
+paramentro = {'m_od': True, 'm_dbo': True, 'm_n': True,
+              'm_p': True, 'm_c': True, 'n_tb': 0, 's_t': True}
 lista_modelagem, data, labels, lista_tabs = inicio(paramentro)
 n_trib = lista_modelagem['n_tb']
 
@@ -40,12 +41,15 @@ botao = st.button(
 
 if botao:
 
-    list_tranfor = transformacao(lista_modelagem, lista_parametros, lista_coeficientes,
-                                lista_contr_retir, list_name_salvo)
+    list_tranfor = transformacao(lista_modelagem, lista_parametros,
+                                 lista_coeficientes,
+                                 lista_contr_retir, list_name_salvo)
     
 
-    st.session_state['reslt_model'] = [n_trib, list_tranfor, ponto_af, lista_modelagem,
-                                    ordem_desague, dias, labels, zona, hemisferio]
+    st.session_state['reslt_model'] = [n_trib, list_tranfor,
+                                       ponto_af, lista_modelagem,
+                                       ordem_desague, dias, labels,
+                                       zona, hemisferio]
 
     st.switch_page("pages/resultados_model.py")
 
