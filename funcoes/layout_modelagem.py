@@ -220,7 +220,7 @@ def dados_iniciais(data, lista_modelagem, n_tributarios, labels, lista_tabs):
                     longitude.append(gdf["geometry"][x].x)
                     latitude.append(gdf["geometry"][x].y)
 
-                altitude = list(gdf.iloc[:,1])
+                altitude = list(gdf.iloc[:,0])
                 comprimento = []
                 for _ in range(len(altitude)):
                     comprimento.append(None)
