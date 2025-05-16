@@ -390,6 +390,11 @@ def modelagem(lista_final, lista_e_coeficientes, lista_s_pontual, lista_e_pontua
 
     for i in range(len(lista_final)):
         hidraulica = lista_final[i].hidraulica
+
+        k_2_calculavel = lista_e_coeficientes[0].coeficientes.k_2_calculavel
+        if lista_modelagem['m_od'] == True and k_2_calculavel == True:
+            k_2 = np.array(k2(lista_final[i].hidraulica))
+            k_2 = np.where(k_2 > lista_e_coeficientes[0].coeficientes.k_2_max, lista_e_coeficientes[0].coeficientes.k_2_max, k_2)
         
         for j in range(len(lista_e_coeficientes)):
             atual = lista_e_coeficientes[j]
@@ -397,7 +402,7 @@ def modelagem(lista_final, lista_e_coeficientes, lista_s_pontual, lista_e_pontua
                 k_2_calculavel = atual.coeficientes.k_2_calculavel
                 k_2_max = atual.coeficientes.k_2_max
                 if lista_modelagem['m_od'] == True and k_2_calculavel == True:
-                    k_2 = np.array(k2(lista_final[0].hidraulica))
+                    k_2 = np.array(k2(lista_final[i].hidraulica))
                     k_2 = np.where(k_2 > atual.coeficientes.k_2_max, atual.coeficientes.k_2_max, k_2)
                 else:
                     k_2 = atual.coeficientes.k_2
