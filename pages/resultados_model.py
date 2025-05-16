@@ -64,6 +64,7 @@ for r in range(n_tributarios + 1):
         dt.update(obj_to_dict)
         obj_to_dict = dt
     if lista_modelagem['m_od']:
+        obj_to_dict['coef_k_2'] = []
         obj_to_dict['conc_od'] = []
         obj_to_dict['conc_dbo'] = []
     if lista_modelagem['m_n']:
@@ -83,6 +84,7 @@ for r in range(n_tributarios + 1):
         for i in range(len(rio)):
             h = rio[i].hidraulica
             cc = rio[i].concentracoes
+            cf = rio[i].coeficientes
             
             obj_to_dict['rio'].append(rio[i].rio)
             obj_to_dict['latitude'].append(h.latitude)
@@ -99,6 +101,7 @@ for r in range(n_tributarios + 1):
             if lista_modelagem['s_t']:
                 obj_to_dict['data'].append(dias[idata])
             if lista_modelagem['m_od']:
+                obj_to_dict['coef_k_2'].append(cf.k_2[idata])
                 obj_to_dict['conc_od'].append(cc.conc_od[idata])
                 obj_to_dict['conc_dbo'].append(cc.conc_dbo[idata])
             if lista_modelagem['m_n']:
