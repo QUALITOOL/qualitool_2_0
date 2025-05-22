@@ -57,7 +57,7 @@ for r in range(n_tributarios + 1):
     obj_to_dict = {'rio': [],'latitude': [], 'longitude': [],
                    'altitude': [], 'comprimento': [], 'vazao': [],
                    'profundidade': [], 'velocidade': [],
-                   'tensao_c': [], 'nivel_dagua': [],
+                   'tensao_c': [], 'nivel_dagua': [], 'inclinacao': [],
                    'froude': []}
     if lista_modelagem['s_t']:
         dt = {'data': []}
@@ -96,6 +96,7 @@ for r in range(n_tributarios + 1):
             obj_to_dict['velocidade'].append(h.velocidade[idata])
             obj_to_dict['tensao_c'].append(h.tensao_c[idata])
             obj_to_dict['nivel_dagua'].append(h.nivel_dagua[idata])
+            obj_to_dict['inclinacao'].append(h.inclinacao[idata])
             obj_to_dict['froude'].append(h.froude[idata])
 
             if lista_modelagem['s_t']:
