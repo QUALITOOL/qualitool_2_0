@@ -195,8 +195,8 @@ def dados_iniciais(data, lista_modelagem, n_tributarios, labels, lista_tabs):
                                                    str(i) + '. Latitude (UTM)':st.column_config.NumberColumn(format="%.2f"),
                                                    str(i) + '. Longitude (UTM)':st.column_config.NumberColumn(format="%.2f"),
                                                    str(i) + '. Altitude (m)':st.column_config.NumberColumn(format="%.2f"),
-                                                   str(i) + '. Comprimento (m)':st.column_config.NumberColumn(format="%.2f")})
-                
+                                                   str(i) + '. Comprimpento (m)':st.column_config.NumberColumn(format="%.2f")})
+
             if len(df_espacial[str(i) + '. Latitude (UTM)']) > 1:
                 latitude = list(df_espacial.iloc[:,0])
                 longitude = list(df_espacial.iloc[:,1])

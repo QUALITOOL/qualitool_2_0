@@ -1,4 +1,4 @@
-# streamlit run C:\Flavya\MQA\QUALI_TOOL\QT_2_0\qualitool_local\Meu_rep\QT_2.py
+# streamlit run C:\Flavya\1_MQA\QUALI_TOOL\QT_2_0\qualitool_2_0\QT_2.py
 import streamlit as st
 from PIL import Image
 
@@ -23,7 +23,7 @@ pg = st.navigation([st.Page("pages/introducao.py",
                             title="QUALITOOL-Ajuste-Resultados")],
                     position="hidden")
 
-# image = Image.open('C:\Flavya\MQA\QUALI_TOOL\QT_2_0\qualitool_local\Meu_rep\imagens\LOGO.png')
+# image = Image.open(r'C:\Flavya\1_MQA\QUALI_TOOL\QT_2_0\qualitool_local\Meu_rep\imagens\LOGO.png')
 image = Image.open('imagens/LOGO.png')
 
 bar = st.sidebar

@@ -207,7 +207,6 @@ def transformacao(lista_modelagem, lista_parametros, lista_coeficiente,
         coeficiente = []
         for k in range(lista_coeficiente['l_n_p'][i] + 1):
             k2_calc = False if lista_modelagem['é_calc'] else True
-            
             coef = Coeficientes(np.array(lista_coeficiente['l_coe'][i + 1][k][1][lista_coeficiente['l_coe'][0].index('Temperatura (°C)')]),
                                 k2_calc, 0, 0, 0,
                                 0, 0, 0, 0, 0,
@@ -1501,6 +1500,7 @@ def estrutura_calibracao(list_tranfor, fixar_coef, seq_coef, list_ordem_coef, li
     container3.line_chart(lista_melhor_aptidao, x_label='Evolução', y_label='Aptidão', use_container_width=True)
 
     melhor_h = lista_melhor_seq[-1]
+
 
     text_sq = ':gray[Valores estimados: '
     atvo = False

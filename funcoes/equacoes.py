@@ -395,7 +395,6 @@ def modelagem(lista_final, lista_e_coeficientes, lista_s_pontual, lista_e_pontua
         if lista_modelagem['m_od'] == True and k_2_calculavel == True:
             k_2 = np.array(k2(lista_final[i].hidraulica))
             k_2 = np.where(k_2 > lista_e_coeficientes[0].coeficientes.k_2_max, lista_e_coeficientes[0].coeficientes.k_2_max, k_2)
-        
         for j in range(len(lista_e_coeficientes)):
             atual = lista_e_coeficientes[j]
             if atual.comprimento == hidraulica.comprimento:
@@ -856,9 +855,10 @@ def modelagem_calib(e_coeficientes, lista_final, lista_s_pontual, lista_e_pontua
         hidraulica = lista_final[i].hidraulica
                
         if i == 0:
-            concentracoes = copy.deepcopy(lista_e_pontual[0].concentracoes)
-                       
-          
+            for ponto_entrada in lista_e_pontual:
+                if hidraulica.comprimento == ponto_entrada.comprimento:
+                    concentracoes = copy.deepcopy(ponto_entrada.concentracoes)
+
         for k in range(len(lista_e_pontual)):
             ep_concetracoes = lista_e_pontual[k].concentracoes
             if hidraulica.comprimento == lista_e_pontual[k].comprimento:
@@ -938,7 +938,9 @@ def modelagem_calib(e_coeficientes, lista_final, lista_s_pontual, lista_e_pontua
                 
         else:
             for dr_to in range(len(dados_reais_to)):
+                
                 if hidraulica.comprimento == dados_reais_to[dr_to].comprimento:
+                    
                     lista_concentracoes.append(copy.deepcopy(concentracoes))
                     
 
@@ -949,6 +951,7 @@ def modelagem_calib_final(lista_pos, seq_coef, lista_hidr_model,
                           list_tranfor, lista_modelagem, ordem_rio,
                           ordem_desague, ponto_af, fixar_coef,
                           ordem_dr, trecho_hidr):
+
     e_coeficientes = copy.deepcopy(fixar_coef)
     for id_c in range(len(seq_coef)):
         setattr(e_coeficientes, seq_coef[id_c], lista_pos[id_c])
@@ -977,7 +980,6 @@ def modelagem_calib_final(lista_pos, seq_coef, lista_hidr_model,
             
             lista_rio_temporaria[ordem_desague[ior - 1]].lista_e_pontual.append(copy.deepcopy(afluente))
         
-
         
     return lista_conc_final
 
@@ -1038,8 +1040,10 @@ def modelagem_2(lista_final, lista_e_coeficientes, lista_s_pontual, lista_e_pont
         coeficientes.s_pinorg = s_pinorg
         
         if i == 0:
-            concentracoes = copy.deepcopy(lista_e_pontual[0].concentracoes)
-
+            for ponto_entrada in lista_e_pontual:
+                if hidraulica.comprimento == ponto_entrada.comprimento:
+                    concentracoes = copy.deepcopy(ponto_entrada.concentracoes)
+        
           
         for k in range(len(lista_e_pontual)):
             ep_concetracoes = lista_e_pontual[k].concentracoes
@@ -1159,6 +1163,7 @@ def salvando_conc(list_tranfor, ordem_final, marcador_conj_global,
             afluente = EntradaPontual(None, None, comp, copy.deepcopy(lista_conc_final[0]), trecho_hidr[-1].hidraulica.vazao,
                                       None, ior)
             list_tranfor[0].lista_e_pontual.append(copy.deepcopy(afluente))
+
 
         
         else:

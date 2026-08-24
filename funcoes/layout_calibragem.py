@@ -74,11 +74,11 @@ def inicio_calib(paramentro):
         c2 = col1_2.slider("Componente social (global):", 0.0, 2.0, 2.0)
     
     else:
-        tam_enxame = 15
-        n_ger = 15
-        w = 0.9
-        c1 = 1.8
-        c2 = 2.0
+        tam_enxame = 50
+        n_ger = 20
+        w = 0.7
+        c1 = 1.496
+        c2 = 1.496
 
     lista_par_pos = [tam_enxame, n_ger, w, c1, c2]
 

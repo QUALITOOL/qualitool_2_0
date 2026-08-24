@@ -4,7 +4,7 @@ import numpy as np
 import random
 import copy
 from funcoes.equacoes import modelagem_calib_final
-
+import streamlit as st
 
 # Particula
 class Particula:
@@ -24,7 +24,6 @@ def calc_aptidao(seq_coef, lista_lista_pos, list_tranfor, fixar_coef,
     
     precisao = 5
     lista_aptidoes = []
-
     partial_function = partial(modelagem_calib_final,
                             seq_coef=seq_coef,
                             lista_hidr_model=lista_hidr_model,
@@ -36,7 +35,8 @@ def calc_aptidao(seq_coef, lista_lista_pos, list_tranfor, fixar_coef,
                             fixar_coef=fixar_coef,
                             ordem_dr=ordem_dr,
                             trecho_hidr=trecho_hidr)
-    
+
+
     with ThreadPoolExecutor() as executor:
         
         resultados = list(executor.map(partial_function, lista_lista_pos))
@@ -111,7 +111,7 @@ def calc_aptidao(seq_coef, lista_lista_pos, list_tranfor, fixar_coef,
                     list_sim_real['conc_e_coli']['real'].append(copy.deepcopy(lista_dador.concentracoes.conc_e_coli[0]))
                     list_sim_real['conc_e_coli']['simulado'].append(copy.deepcopy(lista_conc_final[id_dr].conc_e_coli[0]))
 
-
+          
         lista_coef_Nash_Sutcliffe = []
         for model in nome_modelos:
             soma_1 = 0
@@ -125,14 +125,24 @@ def calc_aptidao(seq_coef, lista_lista_pos, list_tranfor, fixar_coef,
                     f_1 = 1 - (soma_1 / 0.0001)
                 else:
                     f_1 = 1 - (soma_1 / soma_2)
-                
+
+
                 lista_coef_Nash_Sutcliffe.append(abs(1 - f_1))
+                
             else:
                 lista_coef_Nash_Sutcliffe = [9999]
 
         lista_coef_Nash_Sutcliffe = np.array(lista_coef_Nash_Sutcliffe)
 
-        lista_aptidoes.append(round(np.sqrt(np.mean(lista_coef_Nash_Sutcliffe**2)), precisao))
+        media_desvios = np.mean(lista_coef_Nash_Sutcliffe)
+        
+        pior_desvio = np.max(lista_coef_Nash_Sutcliffe)
+        
+        # Soft-Minimax: Média + Penalização proporcional ao pior caso
+        
+        aptidao_equilibrada = media_desvios + 0.5 * pior_desvio
+
+        lista_aptidoes.append(round(aptidao_equilibrada, precisao))
 
     return lista_aptidoes
 
@@ -143,37 +153,54 @@ def gera_enxame_inicial(tam_pop, seq_coef, coef_max_min, list_tranfor, fixar_coe
     
     lista_enxame = []
     lista_lista_pos = []
+
     for p in range(tam_pop):
         lista_pos = []
         lista_vel = []
+
         for nome_coef in seq_coef:
             var = getattr(coef_max_min, nome_coef)
-            lista_pos.append(random.uniform(var[0], var[1]))
-            lista_vel.append(random.uniform(-1, 1))
+            min_val, max_val = var[0], var[1]
+            amplitude = max_val - min_val
+            
+            # Posição aleatória dentro dos limites reais
+            pos = random.uniform(min_val, max_val)
+            lista_pos.append(pos)
+            
+            # Velocidade proporcional à amplitude da variável (ex: 10% da amplitude)
+            vel = random.uniform(-0.1 * amplitude, 0.1 * amplitude)
+            lista_vel.append(vel)
+            
         lista_lista_pos.append(lista_pos)
 
-        particula = Particula(copy.deepcopy(lista_pos), None,
-                                copy.deepcopy(lista_vel), copy.deepcopy(lista_pos),
-                                None)
-        
+        # Cria a partícula
+        particula = Particula(
+            copy.deepcopy(lista_pos), 
+            None, # aptidao inicial
+            copy.deepcopy(lista_vel), 
+            copy.deepcopy(lista_pos), # melhor_pos_ind
+            None  # melhor_apt_ind
+        )
         lista_enxame.append(particula)
 
+    # Cálculo da aptidão de todo o enxame
     list_aptidao = calc_aptidao(seq_coef, lista_lista_pos, list_tranfor, fixar_coef,
-                            ordem_dr, ponto_af, lista_modelagem, lista_hidr_model,
-                            ordem_desague, ordem_rio, trecho_hidr, dias)
+                                ordem_dr, ponto_af, lista_modelagem, lista_hidr_model,
+                                ordem_desague, ordem_rio, trecho_hidr, dias)
     
+    # Define os melhores globais e individuais
+    melhor_aptidao_geral = float('inf') # Se for minimização
+    melhor_posicao_geral = None
+
     for p in range(tam_pop):
         aptidao = list_aptidao[p]
         lista_enxame[p].aptidao = aptidao
         lista_enxame[p].melhor_apt_ind = aptidao
         
-        if p == 0:
-            melhor_posicao_geral = copy.deepcopy(lista_pos)
+        # Atualiza a melhor posição geral com a partícula CORRETA
+        if aptidao < melhor_aptidao_geral:
             melhor_aptidao_geral = aptidao
-
-        elif aptidao < melhor_aptidao_geral:
-            melhor_posicao_geral = copy.deepcopy(lista_pos)
-            melhor_aptidao_geral = aptidao
+            melhor_posicao_geral = copy.deepcopy(lista_enxame[p].posicao)
     
     return lista_enxame, melhor_posicao_geral, melhor_aptidao_geral
 
@@ -200,7 +227,7 @@ def pso(enxame, w, c1, c2, seq_coef, coef_max_min, list_tranfor, fixar_coef,
         ordem_dr, ponto_af, lista_modelagem, lista_hidr_model,
         ordem_desague, ordem_rio, trecho_hidr, dias, melhor_posicao_geral, melhor_aptidao_geral):
     precisao = 5
-    # Atualizar o melhor geral
+    # Atualizar o melhor geral antes do passo
     for i in range(len(enxame)):
         if enxame[i].aptidao < melhor_aptidao_geral:
             melhor_posicao_geral = enxame[i].posicao
@@ -209,33 +236,60 @@ def pso(enxame, w, c1, c2, seq_coef, coef_max_min, list_tranfor, fixar_coef,
     count = 0
     list_lista_posicao = []
     list_lista_veloc = []
+    
     for j in range(len(enxame)):
         var = enxame[j]
         lista_veloc = []
         lista_posicao = []
+        
         for k in range(len(var.posicao)):
             r1, r2 = random.random(), random.random()
+            
+            # Limites e Amplitude do Coeficiente k
+            max_min = getattr(coef_max_min, seq_coef[k])
+            min_val, max_val = max_min[0], max_min[1]
+            amplitude = max_val - min_val
+            
+            # Limite Máximo de Velocidade
+            v_max = 0.05 * amplitude
+            
+            # 1. Equação Clássica da Velocidade
             vel = (w * var.velocidade[k]
                 ) + (c1 * r1 * (var.melhor_pos_ind[k] - var.posicao[k])
                 ) + (c2 * r2 * (melhor_posicao_geral[k] - var.posicao[k]))
             
+            # 2. Trava de Velocidade (Impede explosão)
+            vel = max(-v_max, min(v_max, vel))
+            
+            # 3. Posição Tentativa
             pos = round(var.posicao[k] + vel, precisao)
-            max_min = getattr(coef_max_min, seq_coef[k])
-            pos = max(max_min[0], min(pos, max_min[1]))
+            
+            # 4. Fronteira ABSORVENTE (Corrige o travamento nos extremos)
+            if pos < min_val:
+                pos = min_val
+                vel = 0.0  # Zera a velocidade na parede
+            elif pos > max_val:
+                pos = max_val
+                vel = 0.0  # Zera a velocidade na parede
+                
             lista_veloc.append(vel)
             lista_posicao.append(pos)
+            
         list_lista_posicao.append(lista_posicao)
         list_lista_veloc.append(lista_veloc)
         
+    # Recalcula aptidão das novas posições
     lista_aptidao_atual = calc_aptidao(seq_coef, list_lista_posicao, list_tranfor, fixar_coef,
                                     ordem_dr, ponto_af, lista_modelagem, lista_hidr_model,
                                     ordem_desague, ordem_rio, trecho_hidr, dias)
     
+    # Atualiza as partículas do enxame
     for j in range(len(enxame)):
         var = enxame[j]
         aptidao_atual = lista_aptidao_atual[j]
         lista_veloc = list_lista_veloc[j]
         lista_posicao = list_lista_posicao[j]
+        
         if var.aptidao == melhor_aptidao_geral and count == 0:
             count = 1
             if aptidao_atual > var.aptidao:
