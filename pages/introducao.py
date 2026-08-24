@@ -63,3 +63,4 @@ st.markdown('<h6 style="text-align: right;">Apoio:</h6>',
 imagem_1 = Image.open('imagens/logos_geral.png')
 st.image(imagem_1, output_format="PNG")
 
+
